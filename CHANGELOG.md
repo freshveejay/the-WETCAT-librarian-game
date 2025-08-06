@@ -1,5 +1,39 @@
 # WETCAT Librarian Changelog
 
+## World App Integration (2025-08-06)
+
+### World ID Verification
+- Integrated World ID (Orb) verification for 2x reward multiplier
+- Device verification gives 1.5x multiplier
+- Sybil-resistant: one verification per unique human
+- Verification status cached for 24 hours
+
+### Permit2 Gasless Transactions
+- Implemented Permit2 for gasless reward claims
+- One-time approval required, then all claims are gasless
+- Backend relayer handles gas costs
+- EIP-712 signatures for security
+
+### World App Native Features
+- Auto-detection of World App environment
+- Haptic feedback for game actions
+- Native share functionality
+- Cloud storage for game progress
+- Theme support (light/dark mode)
+
+### Smart Contract V2
+- WETCATGameRewardsV2.sol with World ID support
+- On-chain verification of World ID proofs
+- Multiplier rewards for verified humans
+- Gasless claim functionality
+- Nullifier tracking to prevent double claims
+
+### UI Updates
+- Added World ID verification button in Web3UI
+- Shows verification status and multiplier
+- Dynamic panel height for verification UI
+- Visual feedback for verified users
+
 ## Complete WETCAT Game Development (2025-08-06)
 
 ### Major Features Implemented
