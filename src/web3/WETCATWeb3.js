@@ -42,9 +42,9 @@ export class WETCATWeb3 {
       // Request account access
       await window.ethereum.request({ method: 'eth_requestAccounts' });
 
-      // Create provider and signer
-      this.provider = new ethers.providers.Web3Provider(window.ethereum);
-      this.signer = this.provider.getSigner();
+      // Create provider and signer (ethers v6 syntax)
+      this.provider = new ethers.BrowserProvider(window.ethereum);
+      this.signer = await this.provider.getSigner();
       this.account = await this.signer.getAddress();
 
       // Initialize contracts
@@ -121,7 +121,7 @@ export class WETCATWeb3 {
 
     try {
       const balance = await this.wetcatContract.balanceOf(this.account);
-      const formatted = ethers.utils.formatEther(balance);
+      const formatted = ethers.formatEther(balance);
       this.emit('balanceUpdated', { balance: formatted });
       return formatted;
     } catch (error) {
@@ -180,7 +180,7 @@ export class WETCATWeb3 {
     try {
       const stats = await this.gameContract.getPlayerStats(this.account);
       return {
-        totalEarned: ethers.utils.formatEther(stats.totalEarned),
+        totalEarned: ethers.formatEther(stats.totalEarned),
         highScore: stats.highScore.toNumber(),
         lastClaim: new Date(stats.lastClaim.toNumber() * 1000)
       };

@@ -1,5 +1,23 @@
 # WETCAT Librarian Changelog
 
+## Web3 and Deployment Updates (2025-08-06)
+
+### Fixed Ethers.js v6 Import Issues
+- Updated from ethers v5 syntax to v6:
+  - Changed `ethers.providers.Web3Provider` to `ethers.BrowserProvider`
+  - Removed `utils` namespace, using direct exports (`ethers.formatEther`)
+- Successfully built project with no errors
+
+### ESLint Configuration
+- Added browser globals to ESLint config (HTMLImageElement, HTMLAudioElement, HTMLElement)
+- Added npm scripts for linting: `npm run lint` and `npm run lint:fix`
+- Fixed all ESLint errors, only harmless warnings remain
+
+### Vercel Deployment Ready
+- Project configured to deploy at `/game` subpath
+- Build output directory set to `dist`
+- Ready for deployment to wetcat.boomboxindustries.com/game
+
 ## Bug Fixes - Game Start Issues (2025-08-06)
 
 ### Fixed Critical Issues Preventing Game Start
