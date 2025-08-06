@@ -60,8 +60,8 @@ export class Coin extends Entity {
     // Check collision with wallets if not deposited
     if (!this.isDeposited) {
       const state = this.game.stateManager.currentState;
-      if (state && state.shelves) { // shelves are now wallets
-        for (const wallet of state.shelves) {
+      if (state && state.wallets) {
+        for (const wallet of state.wallets) {
           // Check if coin overlaps with wallet
           if (!(this.x + this.width < wallet.x || 
                 this.x > wallet.x + wallet.width ||

@@ -27,6 +27,12 @@ export class MenuState extends State {
     this.selectedIndex = 0;
     this.showingInstructions = false;
     
+    // DEBUG: Auto-start game after 3 seconds
+    setTimeout(() => {
+      console.log('🚀 AUTO-STARTING GAME FOR DEBUG...');
+      this.startGame();
+    }, 3000);
+    
     // Create and setup background image if not already created
     if (!this.backgroundImage) {
       this.backgroundImage = new Image();
@@ -125,6 +131,7 @@ export class MenuState extends State {
           
           // Check for click
           if (input.isMouseButtonPressed(0)) { // 0 = left mouse button
+            console.log('Mouse clicked on menu item:', this.menuItems[this.selectedIndex].text);
             this.menuItems[this.selectedIndex].action();
           }
           break;
@@ -300,11 +307,17 @@ export class MenuState extends State {
   }
   
   startGame() {
-    // Create a fresh PlayingState instance to ensure clean state
-    const freshPlayingState = new PlayingState(this.game);
-    this.game.stateManager.registerState('playing', freshPlayingState);
-    
-    this.game.stateManager.changeState('playing');
+    console.log('Starting game...');
+    try {
+      // Create a fresh PlayingState instance to ensure clean state
+      const freshPlayingState = new PlayingState(this.game);
+      this.game.stateManager.registerState('playing', freshPlayingState);
+      
+      console.log('Changing to playing state...');
+      this.game.stateManager.changeState('playing');
+    } catch (error) {
+      console.error('Error starting game:', error);
+    }
   }
   
   showInstructions() {

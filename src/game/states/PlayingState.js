@@ -10,6 +10,7 @@ import { Web3UI } from '../ui/Web3UI.js';
 export class PlayingState extends State {
   constructor(game) {
     super(game);
+    console.log('🚀 PlayingState constructor called!');
     this.instanceId = Math.random().toString(36).substring(7); // Unique ID for debugging
     console.log(`[RESTART DEBUG] Creating new PlayingState instance: ${this.instanceId}`);
     this.player = null;
@@ -73,6 +74,7 @@ export class PlayingState extends State {
   }
   
   enter() {
+    console.log('🎮 WETCAT PLAYING STATE ENTERED!');
     console.log(`[RESTART DEBUG] PlayingState.enter() called for instance: ${this.instanceId}`);
     console.log(`[RESTART DEBUG] scammers.length before clearing: ${this.scammers.length}`);
     
@@ -355,7 +357,7 @@ export class PlayingState extends State {
     const gameData = this.game.gameData;
     
     // Count coins causing FUD (on floor or held by kids)
-    const booksOnFloor = this.coins.filter(coin => !coin.isHeld && !coin.isShelved).length;
+    const booksOnFloor = this.coins.filter(coin => !coin.isHeld && !coin.isDeposited).length;
     const booksHeldByKids = this.coins.filter(coin => {
       return coin.isHeld && coin.holder && coin.holder.constructor.name === 'Scammer';
     }).length;
@@ -427,7 +429,7 @@ export class PlayingState extends State {
     
     // Render books (only visible ones that are not held or shelved)
     for (const coin of this.coins) {
-      if (!coin.isHeld && !coin.isShelved && 
+      if (!coin.isHeld && !coin.isDeposited && 
           this.isInViewport(coin, viewportX - padding, viewportY - padding, 
                            viewportWidth + padding * 2, viewportHeight + padding * 2)) {
         renderer.addToLayer('entities', coin);
@@ -870,7 +872,7 @@ export class PlayingState extends State {
     
     for (const coin of this.coins) {
       // Skip if book is already held or shelved
-      if (coin.isHeld || coin.isShelved) continue;
+      if (coin.isHeld || coin.isDeposited) continue;
       
       // Check distance
       const distance = Math.sqrt(
@@ -907,7 +909,7 @@ export class PlayingState extends State {
     
     for (const wallet of this.wallets) {
       // Check if player is near any edge of the shelf
-      if (this.isPlayerNearWallet(wallet, returnDistance) && wallet.canAcceptCoin()) {
+      if (this.isPlayerNearWallet(wallet, returnDistance)) {
         // Try to shelve matching books
         const coin = this.player.depositCoin(wallet);
         if (coin && wallet.addCoin(coin)) {
@@ -1018,10 +1020,10 @@ export class PlayingState extends State {
     };
     
     for (const coin of this.coins) {
-      if (coin.isShelved && coin.isHeld) {
+      if (coin.isDeposited && coin.isHeld) {
         console.error(`Book ${coin.id} is both shelved and held!`);
         coinStates.invalid++;
-      } else if (coin.isShelved) {
+      } else if (coin.isDeposited) {
         coinStates.shelved++;
         // Verify book is actually in a shelf
         let foundInShelf = false;
@@ -1060,7 +1062,7 @@ export class PlayingState extends State {
     
     for (const scammer of this.scammers) {
       // Check if scammer is carrying a coin
-      if (!scammer.carriedCoin) continue;
+      if (scammer.carriedCoins.length === 0) continue;
       
       // Check distance to scammer
       const distance = Math.sqrt(
@@ -1070,11 +1072,10 @@ export class PlayingState extends State {
       
       if (distance <= snatchRadius) {
         // Snatch the coin from the scammer
-        const coin = scammer.carriedCoin;
+        const coin = scammer.carriedCoins[0];
         
         // Remove book from scammer
-        scammer.carriedCoin = null;
-        scammer.dropCoinTimer = 0;
+        scammer.carriedCoins = [];
         
         // Give book to player
         if (this.player.pickupCoin(coin)) {

@@ -7,6 +7,7 @@ export class WETCATWeb3 {
     this.account = null;
     this.wetcatContract = null;
     this.gameContract = null;
+    console.log('WETCATWeb3 initialized');
     
     // Contract addresses (UPDATE THESE WITH REAL ADDRESSES)
     this.WETCAT_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000000'; // TODO: Add real address

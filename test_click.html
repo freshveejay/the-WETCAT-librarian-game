@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Click</title>
+    <style>
+        body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: #222; }
+        #gameCanvas { border: 1px solid #444; }
+        .menu { position: absolute; color: white; text-align: center; }
+        .menu-item { padding: 20px; margin: 10px; background: rgba(255,255,255,0.1); cursor: pointer; }
+        .menu-item:hover { background: rgba(255,255,255,0.3); }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div class="menu">
+        <h1>WETCAT SURVIVORS</h1>
+        <div class="menu-item" onclick="startGame()">Start Game</div>
+        <div class="menu-item">Instructions</div>
+    </div>
+    
+    <script>
+        function startGame() {
+            console.log('Start Game clicked!');
+            alert('Starting game...');
+            // Hide menu
+            document.querySelector('.menu').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

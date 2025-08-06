@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WETCAT Full Debug</title>
+    <style>
+        body { margin: 0; padding: 20px; background: #222; color: white; font-family: monospace; }
+        #log { background: #333; padding: 20px; height: 80vh; overflow-y: auto; }
+        .error { color: #ff6666; }
+        .success { color: #66ff66; }
+        .info { color: #6666ff; }
+    </style>
+</head>
+<body>
+    <h1>WETCAT Game Full Debug</h1>
+    <div id="log"></div>
+    
+    <script type="module">
+        const log = document.getElementById('log');
+        
+        function addLog(msg, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+            console.log(msg);
+        }
+        
+        // Override console methods
+        window.addEventListener('error', (e) => {
+            addLog(`ERROR: ${e.message} at ${e.filename}:${e.lineno}:${e.colno}`, 'error');
+        });
+        
+        window.addEventListener('unhandledrejection', (e) => {
+            addLog(`PROMISE REJECTION: ${e.reason}`, 'error');
+        });
+        
+        async function runTests() {
+            addLog('Starting WETCAT debug...', 'info');
+            
+            // Test 1: Check if basic modules load
+            addLog('Test 1: Loading basic modules...', 'info');
+            try {
+                const modules = [
+                    { path: './src/game/entities/Entity.js', name: 'Entity' },
+                    { path: './src/game/states/State.js', name: 'State' },
+                    { path: './src/game/systems/AssetLoader.js', name: 'AssetLoader' }
+                ];
+                
+                for (const mod of modules) {
+                    try {
+                        await import(mod.path);
+                        addLog(`✓ ${mod.name} loaded`, 'success');
+                    } catch (e) {
+                        addLog(`✗ ${mod.name} failed: ${e.message}`, 'error');
+                        throw e;
+                    }
+                }
+            } catch (e) {
+                addLog(`Basic module loading failed: ${e.message}`, 'error');
+                return;
+            }
+            
+            // Test 2: Check entity imports
+            addLog('\nTest 2: Loading game entities...', 'info');
+            try {
+                const { Coin } = await import('./src/game/entities/Coin.js');
+                addLog('✓ Coin loaded', 'success');
+                
+                const { Wallet } = await import('./src/game/entities/Wallet.js');
+                addLog('✓ Wallet loaded', 'success');
+                
+                const { Scammer } = await import('./src/game/entities/Scammer.js');
+                addLog('✓ Scammer loaded', 'success');
+                
+                const { Player } = await import('./src/game/entities/Player.js');
+                addLog('✓ Player loaded', 'success');
+            } catch (e) {
+                addLog(`Entity loading failed: ${e.message}`, 'error');
+                addLog(`Stack: ${e.stack}`, 'error');
+                return;
+            }
+            
+            // Test 3: Check systems
+            addLog('\nTest 3: Loading game systems...', 'info');
+            try {
+                const { WeaponSystem } = await import('./src/game/systems/WeaponSystem.js');
+                addLog('✓ WeaponSystem loaded', 'success');
+                
+                const { ParticleSystem } = await import('./src/game/effects/ParticleSystem.js');
+                addLog('✓ ParticleSystem loaded', 'success');
+            } catch (e) {
+                addLog(`System loading failed: ${e.message}`, 'error');
+                return;
+            }
+            
+            // Test 4: Check Web3 (might fail if ethers not loaded)
+            addLog('\nTest 4: Loading Web3 components...', 'info');
+            try {
+                const { wetcatWeb3 } = await import('./src/web3/WETCATWeb3.js');
+                addLog('✓ WETCATWeb3 loaded', 'success');
+                
+                const { Web3UI } = await import('./src/game/ui/Web3UI.js');
+                addLog('✓ Web3UI loaded', 'success');
+            } catch (e) {
+                addLog(`Web3 loading failed (this is okay): ${e.message}`, 'info');
+            }
+            
+            // Test 5: Load PlayingState
+            addLog('\nTest 5: Loading PlayingState...', 'info');
+            try {
+                const { PlayingState } = await import('./src/game/states/PlayingState.js');
+                addLog('✓ PlayingState loaded', 'success');
+                
+                // Try to create an instance
+                const mockGame = {
+                    assetLoader: { getImage: () => null },
+                    camera: { setBounds: () => {}, follow: () => {} },
+                    stateManager: { currentState: null },
+                    inputManager: { 
+                        getMovementVector: () => ({ x: 0, y: 0 }),
+                        isActionDown: () => false,
+                        isKeyPressed: () => false
+                    },
+                    renderer: { addToLayer: () => {} },
+                    width: 800,
+                    height: 600
+                };
+                
+                const state = new PlayingState(mockGame);
+                addLog('✓ PlayingState instance created', 'success');
+            } catch (e) {
+                addLog(`PlayingState failed: ${e.message}`, 'error');
+                addLog(`Stack: ${e.stack}`, 'error');
+                return;
+            }
+            
+            // Test 6: Try to start the actual game
+            addLog('\nTest 6: Starting actual game...', 'info');
+            try {
+                const { Game } = await import('./src/game/Game.js');
+                addLog('✓ Game class loaded', 'success');
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = 800;
+                canvas.height = 600;
+                canvas.style.border = '2px solid #666';
+                document.body.appendChild(canvas);
+                
+                const game = new Game(canvas);
+                addLog('✓ Game instance created', 'success');
+                
+                // Try to initialize
+                await game.init();
+                addLog('✓ Game initialized!', 'success');
+                
+                // The game should now be running
+                addLog('\n🎮 GAME SHOULD BE RUNNING! Check the canvas below.', 'success');
+                
+            } catch (e) {
+                addLog(`Game start failed: ${e.message}`, 'error');
+                addLog(`Stack trace:\n${e.stack}`, 'error');
+            }
+        }
+        
+        // Run tests
+        runTests();
+    </script>
+</body>
+</html>

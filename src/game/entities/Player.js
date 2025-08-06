@@ -171,15 +171,15 @@ export class Player extends Entity {
     let sprite;
     if (this.isMoving) {
       sprite = this.animationFrame === 0 
-        ? this.game.assetLoader.getImage('librarianWalk1')
-        : this.game.assetLoader.getImage('librarianWalk2');
+        ? this.game.assetLoader.getImage('wetcatWalk1')
+        : this.game.assetLoader.getImage('wetcatWalk2');
     } else {
-      sprite = this.game.assetLoader.getImage('librarianStand'); // Use standing sprite when not moving
+      sprite = this.game.assetLoader.getImage('wetcatStand'); // Use standing sprite when not moving
     }
     
     // Fallback to placeholder if sprites not loaded
     if (!sprite) {
-      sprite = this.game.assetLoader.getImage('librarian');
+      sprite = this.game.assetLoader.getImage('wetcat');
     }
     
     // Draw speed trail effect if moving fast with upgrades

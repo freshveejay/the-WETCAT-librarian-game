@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WETCAT Debug</title>
+</head>
+<body>
+    <h1>WETCAT Game Debug</h1>
+    <canvas id="gameCanvas"></canvas>
+    <div id="console" style="position: fixed; bottom: 0; left: 0; right: 0; height: 200px; background: black; color: green; overflow-y: scroll; font-family: monospace; padding: 10px;">
+        <div>Console output:</div>
+    </div>
+    
+    <script type="module">
+        // Override console.log to display in our div
+        const consoleDiv = document.getElementById('console');
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            originalLog(...args);
+            const div = document.createElement('div');
+            div.textContent = '> ' + args.join(' ');
+            consoleDiv.appendChild(div);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        };
+        
+        console.error = function(...args) {
+            originalError(...args);
+            const div = document.createElement('div');
+            div.style.color = 'red';
+            div.textContent = '! ' + args.join(' ');
+            consoleDiv.appendChild(div);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        };
+        
+        // Load the game
+        console.log('Loading game...');
+        import('/src/main.js').then(() => {
+            console.log('Game loaded successfully');
+        }).catch(error => {
+            console.error('Failed to load game:', error);
+        });
+    </script>
+</body>
+</html>

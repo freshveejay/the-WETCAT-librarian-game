@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WETCAT Debug Test</title>
+    <style>
+        body { margin: 0; padding: 20px; background: #222; color: white; font-family: monospace; }
+        #status { background: #333; padding: 20px; margin: 10px 0; }
+        .success { color: #0f0; }
+        .error { color: #f00; }
+    </style>
+</head>
+<body>
+    <h1>WETCAT Game Debug Test</h1>
+    <div id="status"></div>
+    
+    <script type="module">
+        const status = document.getElementById('status');
+        
+        function log(msg, isError = false) {
+            const div = document.createElement('div');
+            div.className = isError ? 'error' : 'success';
+            div.textContent = new Date().toLocaleTimeString() + ' - ' + msg;
+            status.appendChild(div);
+            console.log(msg);
+        }
+        
+        try {
+            log('Testing imports...');
+            
+            // Test each import individually
+            const imports = [
+                { path: '/src/game/states/State.js', name: 'State' },
+                { path: '/src/game/entities/Player.js', name: 'Player' },
+                { path: '/src/game/entities/Coin.js', name: 'Coin' },
+                { path: '/src/game/entities/Wallet.js', name: 'Wallet' },
+                { path: '/src/game/entities/Scammer.js', name: 'Scammer' },
+                { path: '/src/game/systems/WeaponSystem.js', name: 'WeaponSystem' },
+                { path: '/src/game/effects/ParticleSystem.js', name: 'ParticleSystem' },
+                { path: '/src/game/ui/Web3UI.js', name: 'Web3UI' },
+                { path: '/src/web3/WETCATWeb3.js', name: 'WETCATWeb3' },
+                { path: '/src/game/states/PlayingState.js', name: 'PlayingState' }
+            ];
+            
+            for (const imp of imports) {
+                try {
+                    const module = await import(imp.path);
+                    log(`✓ ${imp.name} loaded successfully`);
+                } catch (e) {
+                    log(`✗ Failed to load ${imp.name}: ${e.message}`, true);
+                    console.error(e);
+                }
+            }
+            
+            log('Testing game initialization...');
+            
+            // Try to create a minimal game
+            const { Game } = await import('/src/game/Game.js');
+            log('✓ Game class loaded');
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 800;
+            canvas.height = 600;
+            document.body.appendChild(canvas);
+            
+            const game = new Game(canvas);
+            log('✓ Game instance created');
+            
+            // Try to manually create and switch to PlayingState
+            const { PlayingState } = await import('/src/game/states/PlayingState.js');
+            log('✓ PlayingState imported');
+            
+            const playingState = new PlayingState(game);
+            log('✓ PlayingState instance created');
+            
+            game.stateManager.registerState('playing', playingState);
+            log('✓ PlayingState registered');
+            
+            game.stateManager.changeState('playing');
+            log('✓ Changed to playing state!');
+            
+        } catch (error) {
+            log(`Fatal error: ${error.message}`, true);
+            console.error(error);
+        }
+    </script>
+</body>
+</html>

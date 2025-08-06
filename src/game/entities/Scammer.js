@@ -125,8 +125,8 @@ export class Scammer extends Entity {
     let canMoveX = true;
     let canMoveY = true;
     
-    if (state && state.shelves) { // shelves are wallets
-      for (const wallet of state.shelves) {
+    if (state && state.wallets) {
+      for (const wallet of state.wallets) {
         if (this.checkCollision(newX, this.y, wallet)) {
           canMoveX = false;
         }
@@ -340,12 +340,12 @@ export class Scammer extends Entity {
   
   findNearestWallet() {
     const state = this.game.stateManager.currentState;
-    if (!state || !state.shelves) return null;
+    if (!state || !state.wallets) return null;
     
     let nearest = null;
     let nearestDistance = Infinity;
     
-    for (const wallet of state.shelves) {
+    for (const wallet of state.wallets) {
       if (!wallet.isEmpty()) {
         const distance = this.getDistanceTo(wallet);
         if (distance < nearestDistance) {
@@ -371,10 +371,7 @@ export class Scammer extends Entity {
         }
       );
       
-      // Add coin back to game's coin list
-      if (state && state.books) {
-        state.books.push(coin);
-      }
+      // Coins are already tracked in state.coins, just drop them
     }
     
     this.carriedCoins = [];

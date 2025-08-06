@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WETCAT Direct Test</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <script type="module">
+        console.log('Starting direct test...');
+        
+        try {
+            // Import the game
+            const { Game } = await import('./src/game/Game.js');
+            const { PlayingState } = await import('./src/game/states/PlayingState.js');
+            
+            // Setup canvas
+            const canvas = document.getElementById('gameCanvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            // Create game
+            const game = new Game(canvas);
+            
+            // Skip menu, go straight to playing
+            const playingState = new PlayingState(game);
+            game.stateManager.registerState('playing', playingState);
+            game.stateManager.changeState('playing');
+            
+            // Start the game
+            game.start();
+            
+            console.log('Game started successfully!');
+            
+        } catch (error) {
+            console.error('Failed to start game:', error);
+            document.body.innerHTML = `<pre style="color:red">${error.stack}</pre>`;
+        }
+    </script>
+</body>
+</html>
