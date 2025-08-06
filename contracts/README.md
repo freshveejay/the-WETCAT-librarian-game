@@ -3,6 +3,9 @@
 ## Overview
 The WETCATGameRewards contract manages on-chain rewards for the WETCAT Librarian game. It distributes $WETCAT tokens to players based on their performance and achievements.
 
+**Network**: World Chain (Chain ID: 480)  
+**$WETCAT Token**: `0x9e0ddff1a66efcbb697c7a3c513b3c83ace239aa`
+
 ## Features
 - Daily reward claims with 24-hour cooldown
 - Score-based reward calculation (10-100 $WETCAT per day)
@@ -22,13 +25,19 @@ The WETCATGameRewards contract manages on-chain rewards for the WETCAT Librarian
    - Add network configuration for your target chain
    - Set up deployment account private key
 
-3. **Update Contract**:
-   - Set the correct WETCAT token address in `deploy.js`
-   - Review reward amounts and cooldowns
-
-4. **Deploy**:
+3. **Set Environment Variables**:
    ```bash
-   npx hardhat run contracts/deploy.js --network mainnet
+   cp .env.example .env
+   # Edit .env with your private key
+   ```
+
+4. **Deploy to World Chain**:
+   ```bash
+   # For testnet deployment
+   npx hardhat run contracts/deploy.js --network worldchain_testnet
+   
+   # For mainnet deployment
+   npx hardhat run contracts/deploy.js --network worldchain
    ```
 
 5. **Post-Deployment**:

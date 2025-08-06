@@ -9,8 +9,8 @@ export class WETCATWeb3 {
     this.gameContract = null;
     console.log('WETCATWeb3 initialized');
 
-    // Contract addresses (UPDATE THESE WITH REAL ADDRESSES)
-    this.WETCAT_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000000'; // TODO: Add real address
+    // Contract addresses on World Chain
+    this.WETCAT_TOKEN_ADDRESS = '0x9e0ddff1a66efcbb697c7a3c513b3c83ace239aa'; // $WETCAT on World Chain
     this.GAME_REWARDS_ADDRESS = '0x0000000000000000000000000000000000000000'; // TODO: Deploy and add
 
     // ABIs
@@ -41,6 +41,44 @@ export class WETCATWeb3 {
 
       // Request account access
       await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+      // Check if we're on World Chain
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      const worldChainId = '0x1e0'; // 480 in hex
+      
+      if (chainId !== worldChainId) {
+        try {
+          // Try to switch to World Chain
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: worldChainId }],
+          });
+        } catch (switchError) {
+          // This error code indicates that the chain has not been added to MetaMask
+          if (switchError.code === 4902) {
+            try {
+              await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: worldChainId,
+                  chainName: 'World Chain',
+                  nativeCurrency: {
+                    name: 'Ethereum',
+                    symbol: 'ETH',
+                    decimals: 18
+                  },
+                  rpcUrls: ['https://worldchain-mainnet.g.alchemy.com/public'],
+                  blockExplorerUrls: ['https://worldscan.org']
+                }],
+              });
+            } catch (addError) {
+              throw new Error('Failed to add World Chain to MetaMask');
+            }
+          } else {
+            throw new Error('Failed to switch to World Chain');
+          }
+        }
+      }
 
       // Create provider and signer (ethers v6 syntax)
       this.provider = new ethers.BrowserProvider(window.ethereum);

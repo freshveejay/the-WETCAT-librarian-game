@@ -7,8 +7,8 @@ async function main() {
   console.log("Deploying contracts with the account:", deployer.address);
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
-  // UPDATE THIS: Add the actual WETCAT token address
-  const WETCAT_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000";
+  // WETCAT token address on World Chain
+  const WETCAT_TOKEN_ADDRESS = "0x9e0ddff1a66efcbb697c7a3c513b3c83ace239aa";
   
   // Deploy the game rewards contract
   const WETCATGameRewards = await ethers.getContractFactory("WETCATGameRewards");
