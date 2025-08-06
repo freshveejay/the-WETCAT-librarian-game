@@ -12,30 +12,30 @@ export class GameOverState extends State {
     ];
     this.selectedIndex = 0;
     this.selectSound = null;
-    
+
     // Video background
     this.video = null;
     this.videoLoaded = false;
   }
-  
+
   enter(data) {
     this.won = data.won || false;
     this.reason = data.reason || '';
     this.selectedIndex = 0;
-    
+
     // Initialize select sound if not already created
     if (!this.selectSound) {
       this.selectSound = new Audio('/menu_select.mp3');
       this.selectSound.volume = 0.7;
     }
-    
+
     // Play "uh oh" sound if player lost
     if (!this.won) {
       const uhOhSound = new Audio('/uh_oh.mp3');
       uhOhSound.volume = 0.6;
       uhOhSound.play().catch(e => console.log('Uh oh sound play failed:', e));
     }
-    
+
     // Create and setup video if not already created
     if (!this.video) {
       this.video = document.createElement('video');
@@ -43,24 +43,24 @@ export class GameOverState extends State {
       this.video.loop = true;
       this.video.muted = true;
       this.video.autoplay = true;
-      
+
       // Handle various video events for better reliability
       this.video.addEventListener('canplay', () => {
         this.videoLoaded = true;
         this.video.play().catch(e => console.log('Video play failed:', e));
       });
-      
+
       // Also try playing on loadedmetadata
       this.video.addEventListener('loadedmetadata', () => {
         this.video.play().catch(e => console.log('Video play on metadata failed:', e));
       });
-      
+
       // Handle errors
       this.video.addEventListener('error', (e) => {
         console.error('Video loading error:', e);
         this.videoLoaded = false;
       });
-      
+
       // Force load the video
       this.video.load();
     } else {
@@ -68,7 +68,7 @@ export class GameOverState extends State {
       this.videoLoaded = true; // Assume it's loaded if we already created it
       this.video.play().catch(e => console.log('Video play failed:', e));
     }
-    
+
     // Collect game stats
     const gameData = this.game.gameData;
     this.stats = {
@@ -77,35 +77,35 @@ export class GameOverState extends State {
       chaosLevel: Math.floor(gameData.chaosLevel),
       booksCollected: gameData.booksCollected || 0,
       booksShelved: gameData.booksShelved || 0,
-      kidsRepelled: gameData.kidsRepelled || 0,
+      kidsRepelled: gameData.kidsRepelled || 0
     };
   }
-  
+
   exit() {
     // Pause video when leaving game over screen
     if (this.video) {
       this.video.pause();
     }
   }
-  
+
   update(deltaTime) {
     const input = this.game.inputManager;
-    
+
     // Menu navigation
     if (input.isKeyPressed('ArrowUp') || input.isKeyPressed('w')) {
       this.selectedIndex = (this.selectedIndex - 1 + this.menuItems.length) % this.menuItems.length;
       this.playSelectSound();
     }
-    
+
     if (input.isKeyPressed('ArrowDown') || input.isKeyPressed('s')) {
       this.selectedIndex = (this.selectedIndex + 1) % this.menuItems.length;
       this.playSelectSound();
     }
-    
+
     if (input.isKeyPressed('Enter') || input.isKeyPressed(' ')) {
       this.menuItems[this.selectedIndex].action();
     }
-    
+
     // Mouse support
     const mousePos = input.getMousePosition();
     if (mousePos) {
@@ -114,7 +114,7 @@ export class GameOverState extends State {
       const boxHeight = 600;
       const boxX = (width - boxWidth) / 2;
       const boxY = (height - boxHeight) / 2;
-      
+
       // Check each menu item
       for (let i = 0; i < this.menuItems.length; i++) {
         const y = boxY + 480 + i * 50;
@@ -122,7 +122,7 @@ export class GameOverState extends State {
         const itemBottom = y + 20;
         const itemLeft = boxX + 150;
         const itemRight = boxX + boxWidth - 150;
-        
+
         if (mousePos.x >= itemLeft && mousePos.x <= itemRight &&
             mousePos.y >= itemTop && mousePos.y <= itemBottom) {
           // Mouse is over this item
@@ -130,7 +130,7 @@ export class GameOverState extends State {
             this.selectedIndex = i;
             this.playSelectSound();
           }
-          
+
           // Check for click
           if (input.isMouseButtonPressed(0)) { // 0 = left mouse button
             this.menuItems[this.selectedIndex].action();
@@ -140,20 +140,20 @@ export class GameOverState extends State {
       }
     }
   }
-  
+
   render(renderer, interpolation) {
     const ctx = renderer.ctx;
     const { width, height } = this.game;
-    
+
     // Draw video background if loaded
     if (this.video && this.videoLoaded && !this.video.paused) {
       try {
         // Scale video to cover the entire canvas
         const videoAspect = this.video.videoWidth / this.video.videoHeight;
         const canvasAspect = width / height;
-        
+
         let drawWidth, drawHeight, drawX, drawY;
-        
+
         if (videoAspect > canvasAspect) {
           // Video is wider - fit height, crop width
           drawHeight = height;
@@ -167,7 +167,7 @@ export class GameOverState extends State {
           drawX = 0;
           drawY = (height - drawHeight) / 2;
         }
-        
+
         ctx.drawImage(this.video, drawX, drawY, drawWidth, drawHeight);
       } catch (e) {
         // Fallback to solid color if video fails
@@ -179,14 +179,14 @@ export class GameOverState extends State {
       ctx.fillStyle = this.won ? '#4169E1' : '#8B0000';
       ctx.fillRect(0, 0, width, height);
     }
-    
+
     // Result box with rounded corners
     const boxWidth = 700;
     const boxHeight = 600;
     const boxX = (width - boxWidth) / 2;
     const boxY = (height - boxHeight) / 2;
     const borderRadius = 20;
-    
+
     // Helper function to draw rounded rectangle
     const drawRoundedRect = (x, y, width, height, radius) => {
       ctx.beginPath();
@@ -201,25 +201,25 @@ export class GameOverState extends State {
       ctx.quadraticCurveTo(x, y, x + radius, y);
       ctx.closePath();
     };
-    
+
     // Draw box background with transparency
     drawRoundedRect(boxX, boxY, boxWidth, boxHeight, borderRadius);
     ctx.fillStyle = 'rgba(26, 26, 46, 0.9)'; // Semi-transparent dark blue
     ctx.fill();
-    
+
     ctx.strokeStyle = '#FFD93D';
     ctx.lineWidth = 4;
     ctx.stroke();
-    
+
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    
+
     // Title
     ctx.fillStyle = this.won ? '#4CAF50' : '#FF4444';
     ctx.font = 'bold 64px Arial';
     ctx.fillText(this.won ? 'VICTORY!' : 'GAME OVER', width / 2, boxY + 80);
-    
+
     // Subtitle
     ctx.fillStyle = '#FFD93D';
     ctx.font = '24px Arial';
@@ -232,16 +232,16 @@ export class GameOverState extends State {
       }
       ctx.fillText(message, width / 2, boxY + 130);
     }
-    
+
     // Stats
     ctx.font = '20px Arial';
     ctx.textAlign = 'left';
     const statX = boxX + 100;
     let statY = boxY + 200;
-    
+
     const minutes = Math.floor(this.stats.timeElapsed / 60);
     const seconds = this.stats.timeElapsed % 60;
-    
+
     const statLines = [
       `Time Survived: ${minutes}:${seconds.toString().padStart(2, '0')}`,
       `Final Level: ${this.stats.level}`,
@@ -250,18 +250,18 @@ export class GameOverState extends State {
       `Coins Delivered: ${this.stats.booksShelved}`,
       `Scammers Splashed: ${this.stats.kidsRepelled}`
     ];
-    
+
     statLines.forEach(line => {
       ctx.fillText(line, statX, statY);
       statY += 30;
     });
-    
+
     // Menu items
     ctx.textAlign = 'center';
     ctx.font = '32px Arial';
     this.menuItems.forEach((item, index) => {
       const y = boxY + 480 + index * 50;
-      
+
       if (index === this.selectedIndex) {
         ctx.fillStyle = '#FFD93D';
         ctx.fillRect(boxX + 150, y - 20, boxWidth - 300, 40);
@@ -269,21 +269,21 @@ export class GameOverState extends State {
       } else {
         ctx.fillStyle = '#FFD93D';
       }
-      
+
       ctx.fillText(item.text, width / 2, y);
     });
-    
+
     ctx.restore();
   }
-  
+
   playAgain() {
     this.game.stateManager.changeState('playing');
   }
-  
+
   mainMenu() {
     this.game.stateManager.changeState('menu');
   }
-  
+
   playSelectSound() {
     if (this.selectSound) {
       this.selectSound.currentTime = 0;

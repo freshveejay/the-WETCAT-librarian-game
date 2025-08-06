@@ -13,7 +13,7 @@ export const UPGRADES = {
     },
     getDescription: (level) => `+${10 * level}% Movement Speed`
   },
-  
+
   pickupRadius: {
     id: 'pickupRadius',
     name: 'Magnet Hands',
@@ -26,7 +26,7 @@ export const UPGRADES = {
     },
     getDescription: (level) => `+${(0.1 * level).toFixed(1)}m Pickup/Return Radius`
   },
-  
+
   carrySlots: {
     id: 'carrySlots',
     name: 'Crypto Wallet',
@@ -38,7 +38,7 @@ export const UPGRADES = {
     },
     getDescription: (level) => `+${level} Coin Slots`
   },
-  
+
   stamina: {
     id: 'stamina',
     name: 'HODL Power',
@@ -50,7 +50,7 @@ export const UPGRADES = {
     },
     getDescription: (level) => `+${10 * level} Max Stamina`
   },
-  
+
   fudDampening: {
     id: 'fudDampening',
     name: 'Diamond Hands',
@@ -62,7 +62,7 @@ export const UPGRADES = {
     },
     getDescription: (level) => `-${2 * level}% FUD Gain`
   },
-  
+
   xpGain: {
     id: 'xpGain',
     name: 'Moon Goggles',
@@ -74,7 +74,7 @@ export const UPGRADES = {
     },
     getDescription: (level) => `+${8 * level}% XP Gain`
   },
-  
+
   // Future weapon skills (not implemented yet)
   shushWave: {
     id: 'shushWave',
@@ -95,12 +95,12 @@ export function getRandomUpgrades(count = 3, playerUpgrades = {}) {
   const availableUpgrades = Object.values(UPGRADES).filter(upgrade => {
     // Filter out weapons and removed upgrades
     if (upgrade.isWeapon || upgrade.id === 'health') return false;
-    
+
     // Check if upgrade is maxed out
     const currentLevel = playerUpgrades[upgrade.id] || 0;
     return currentLevel < upgrade.maxLevel;
   });
-  
+
   // Shuffle and pick
   const shuffled = [...availableUpgrades].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, Math.min(count, shuffled.length));

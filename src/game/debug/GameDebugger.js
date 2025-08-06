@@ -8,20 +8,20 @@ export class GameDebugger {
       spriteInfo: {},
       errors: []
     };
-    
+
     // Hook into asset loader
     this.monitorAssetLoading();
-    
+
     // Create debug panel
     this.createDebugPanel();
   }
-  
+
   monitorAssetLoading() {
     const originalLoadImage = this.game.assetLoader.loadImage.bind(this.game.assetLoader);
-    
+
     this.game.assetLoader.loadImage = async (name, path) => {
       this.debugInfo.assetLoadStatus[name] = 'loading';
-      
+
       try {
         const result = await originalLoadImage(name, path);
         this.debugInfo.assetLoadStatus[name] = result ? 'loaded' : 'failed';
@@ -33,7 +33,7 @@ export class GameDebugger {
       }
     };
   }
-  
+
   createDebugPanel() {
     const panel = document.createElement('div');
     panel.id = 'game-debug-panel';
@@ -50,17 +50,17 @@ export class GameDebugger {
       z-index: 10000;
       border: 1px solid #0f0;
     `;
-    
+
     document.body.appendChild(panel);
-    
+
     // Update debug info every frame
     setInterval(() => this.updateDebugPanel(), 100);
   }
-  
+
   updateDebugPanel() {
     const panel = document.getElementById('game-debug-panel');
     if (!panel) return;
-    
+
     const player = this.game.stateManager.currentState?.player;
     if (player) {
       this.debugInfo.playerPosition = { x: Math.round(player.x), y: Math.round(player.y) };
@@ -71,14 +71,14 @@ export class GameDebugger {
         facing: player.facing
       };
     }
-    
+
     const html = `
       <h3 style="margin: 0 0 10px 0; color: #0f0;">WETCAT Debug</h3>
       
       <h4>Assets:</h4>
-      ${Object.entries(this.debugInfo.assetLoadStatus).map(([name, status]) => 
-        `<div style="color: ${status === 'loaded' ? '#0f0' : '#f00'}">${name}: ${status}</div>`
-      ).join('')}
+      ${Object.entries(this.debugInfo.assetLoadStatus).map(([name, status]) =>
+    `<div style="color: ${status === 'loaded' ? '#0f0' : '#f00'}">${name}: ${status}</div>`
+  ).join('')}
       
       <h4>Player:</h4>
       <div>Pos: ${this.debugInfo.playerPosition.x}, ${this.debugInfo.playerPosition.y}</div>
@@ -92,10 +92,10 @@ export class GameDebugger {
         ${this.debugInfo.errors.map(err => `<div style="color: #f00;">${err}</div>`).join('')}
       ` : ''}
     `;
-    
+
     panel.innerHTML = html;
   }
-  
+
   logError(error) {
     this.debugInfo.errors.push(error);
     console.error('[WETCAT Debug]', error);
