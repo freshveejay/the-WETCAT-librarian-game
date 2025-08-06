@@ -1,8 +1,11 @@
 import { State } from './State.js';
 import { Player } from '../entities/Player.js';
-import { Book } from '../entities/Book.js';
-import { Shelf } from '../entities/Shelf.js';
-import { Kid } from '../entities/Kid.js';
+import { Coin } from '../entities/Coin.js';
+import { Wallet } from '../entities/Wallet.js';
+import { Scammer } from '../entities/Scammer.js';
+import { WeaponSystem } from '../systems/WeaponSystem.js';
+import { ParticleSystem } from '../effects/ParticleSystem.js';
+import { Web3UI } from '../ui/Web3UI.js';
 
 export class PlayingState extends State {
   constructor(game) {
@@ -10,10 +13,21 @@ export class PlayingState extends State {
     this.instanceId = Math.random().toString(36).substring(7); // Unique ID for debugging
     console.log(`[RESTART DEBUG] Creating new PlayingState instance: ${this.instanceId}`);
     this.player = null;
-    this.kids = [];
-    this.books = [];
-    this.shelves = [];
-    this.particles = [];
+    this.scammers = []; // Scammers
+    this.coins = []; // Coins
+    this.wallets = []; // Wallets
+    this.particleSystem = new ParticleSystem(game);
+    this.weaponSystem = new WeaponSystem(game);
+    this.web3UI = new Web3UI(game);
+    
+    // Session stats for Web3 rewards
+    this.sessionStats = {
+      coinsCollected: 0,
+      scammersRepelled: 0,
+      timeSurvived: 0,
+      maxFudReached: 0,
+      wetcatEarned: 0
+    };
     
     // World bounds - minimal area just for bookshelves
     // Shelves: 8 cols, last shelf at x = 320 + 7*160 = 1440, shelf width = 64
@@ -24,14 +38,14 @@ export class PlayingState extends State {
     this.worldWidth = 1600; // Just enough for shelves + small buffer
     this.worldHeight = 1040; // Just enough for shelves + small buffer
     
-    // Kid spawning
-    this.kidSpawnTimer = 0;
-    this.kidSpawnInterval = 15; // Constant 15 seconds between spawns
-    this.maxKids = 3; // Starting max, will increase with waves
-    this.lastMaxKids = 3; // Track previous max to detect increases
+    // Scammer spawning
+    this.scammerSpawnTimer = 0;
+    this.scammerSpawnInterval = 15; // Constant 15 seconds between spawns
+    this.maxScammers = 3; // Starting max, will increase with waves
+    this.lastMaxScammers = 3; // Track previous max to detect increases
     
     // Wave notification
-    this.maxKidsIncreaseNotification = {
+    this.maxScammersIncreaseNotification = {
       active: false,
       increase: 0,
       timer: 0,
@@ -60,18 +74,18 @@ export class PlayingState extends State {
   
   enter() {
     console.log(`[RESTART DEBUG] PlayingState.enter() called for instance: ${this.instanceId}`);
-    console.log(`[RESTART DEBUG] kids.length before clearing: ${this.kids.length}`);
+    console.log(`[RESTART DEBUG] scammers.length before clearing: ${this.scammers.length}`);
     
     // Clear any existing entities first to prevent accumulation
-    this.kids = [];
-    this.books = [];
-    this.particles = [];
-    this.shelves = [];
+    this.scammers = [];
+    this.coins = [];
+    if (this.particleSystem) this.particleSystem.clear();
+    this.wallets = [];
     
     // Reset game data
     this.game.gameData = {
-      chaosLevel: 0,
-      maxChaos: 100,
+      fudLevel: 0,
+      maxFud: 100,
       playerLevel: 1,
       xp: 0,
       xpToNext: 100,
@@ -79,34 +93,34 @@ export class PlayingState extends State {
       targetTime: 30 * 60,
       isPaused: false,
       // Stats tracking
-      booksCollected: 0,
-      booksShelved: 0,
-      kidsRepelled: 0
+      coinsCollected: 0,
+      coinsDeposited: 0,
+      scammersRepelled: 0
     };
     
-    // Ensure kid spawning is reset to initial values
-    this.maxKids = 3;
-    this.lastMaxKids = 3;
-    this.kidSpawnTimer = 0;
-    this.kidSpawnInterval = 15;
+    // Ensure scammer spawning is reset to initial values
+    this.maxScammers = 3;
+    this.lastMaxScammers = 3;
+    this.scammerSpawnTimer = 0;
+    this.scammerSpawnInterval = 15;
     
     // Reset wave notification
-    this.maxKidsIncreaseNotification = {
+    this.maxScammersIncreaseNotification = {
       active: false,
       increase: 0,
       timer: 0,
       duration: 3
     };
     
-    console.log(`[KID SPAWNING] World dimensions: ${this.worldWidth}x${this.worldHeight}`);
-    console.log(`[KID SPAWNING] Spawn points:`, this.spawnPoints);
+    console.log(`[SCAMMER SPAWNING] World dimensions: ${this.worldWidth}x${this.worldHeight}`);
+    console.log(`[SCAMMER SPAWNING] Spawn points:`, this.spawnPoints);
     
     // Initialize game world
     this.initializeLevel();
     
     // Start background music
     if (!this.bgMusic) {
-      this.bgMusic = new Audio('/game_music.mp3');
+      this.bgMusic = new Audio('/wetcat-song-2.mp3');
       this.bgMusic.loop = true;
       this.bgMusic.volume = 0.4; // Slightly lower volume for gameplay
       
@@ -125,33 +139,33 @@ export class PlayingState extends State {
     if (this.pickupSounds.length === 0) {
       // Create 5 audio instances for overlapping pickup sounds
       for (let i = 0; i < 5; i++) {
-        const audio = new Audio('/pickup_book.mp3');
+        const audio = new Audio('/pickup_coin.mp3');
         audio.volume = 0.7; // Increased from 0.5 for better audibility
         this.pickupSounds.push(audio);
       }
     }
     
     if (!this.shelfSound) {
-      this.shelfSound = new Audio('/book_on_shelf.mp3');
+      this.shelfSound = new Audio('/book_on_wallet.mp3');
       this.shelfSound.volume = 0.6;
     }
   }
   
   exit() {
     // Clean up
-    this.kids = [];
-    this.books = [];
-    this.particles = [];
-    this.shelves = [];
+    this.scammers = [];
+    this.coins = [];
+    if (this.particleSystem) this.particleSystem.clear();
+    this.wallets = [];
     
-    // Reset kid spawning variables to initial state
-    this.maxKids = 3;
-    this.lastMaxKids = 3;
-    this.kidSpawnTimer = 0;
-    this.kidSpawnInterval = 15;
+    // Reset scammer spawning variables to initial state
+    this.maxScammers = 3;
+    this.lastMaxScammers = 3;
+    this.scammerSpawnTimer = 0;
+    this.scammerSpawnInterval = 15;
     
     // Reset wave notification
-    this.maxKidsIncreaseNotification = {
+    this.maxScammersIncreaseNotification = {
       active: false,
       increase: 0,
       timer: 0,
@@ -193,18 +207,33 @@ export class PlayingState extends State {
     this.game.camera.follow(this.player);
     
     // Spawn initial kids
-    const initialKids = 2; // Start with 2 kids
-    console.log(`[RESTART DEBUG] Before spawning: kids.length = ${this.kids.length}`);
-    for (let i = 0; i < initialKids; i++) {
+    const initialScammers = 2; // Start with 2 kids
+    console.log(`[RESTART DEBUG] Before spawning: scammers.length = ${this.scammers.length}`);
+    for (let i = 0; i < initialScammers; i++) {
       const spawnPoint = this.spawnPoints[Math.floor(Math.random() * this.spawnPoints.length)];
-      const kid = new Kid(this.game, spawnPoint.x, spawnPoint.y, 1); // Easy kid
-      this.kids.push(kid);
+      const scammer = new Scammer(this.game, spawnPoint.x, spawnPoint.y, { aggression: 1, variant: 1 }); // Easy scammer
+      this.scammers.push(scammer);
     }
-    console.log(`[RESTART DEBUG] After spawning: kids.length = ${this.kids.length}`);
-    console.log(`[RESTART DEBUG] maxKids = ${this.maxKids}`);
+    console.log(`[RESTART DEBUG] After spawning: scammers.length = ${this.scammers.length}`);
+    console.log(`[RESTART DEBUG] maxScammers = ${this.maxScammers}`);
     
-    // Initialize kid spawning for additional kids
-    this.kidSpawnTimer = 15; // First additional kid spawns after 15 seconds
+    
+    // Give player starting weapon
+    this.weaponSystem.unlockWeapon('fud_blast');
+    
+    // Unlock additional weapons based on progression
+    if (this.game.gameData.playerLevel >= 3) {
+      this.weaponSystem.unlockWeapon('diamond_slap');
+    }
+    if (this.game.gameData.playerLevel >= 5) {
+      this.weaponSystem.unlockWeapon('hodl_shield');
+    }
+    if (this.game.gameData.playerLevel >= 7) {
+      this.weaponSystem.unlockWeapon('moon_beam');
+    }
+
+    // Initialize scammer spawning for additional kids
+    this.scammerSpawnTimer = 15; // First additional scammer spawns after 15 seconds
   }
   
   update(deltaTime) {
@@ -232,6 +261,32 @@ export class PlayingState extends State {
     
     // Update game timer
     gameData.elapsedTime += deltaTime;
+    // Update weapon system
+    if (this.weaponSystem && this.player) {
+      this.weaponSystem.update(deltaTime, this.player);
+      
+      // Handle weapon firing (keys 1-4)
+      const input = this.game.inputManager;
+      for (let i = 0; i < 4; i++) {
+        if (input.isKeyPressed((i + 1).toString())) {
+          this.weaponSystem.fireWeapon(i, this.player);
+        }
+      }
+    }
+    
+    // Update particle system
+    if (this.particleSystem) {
+      this.particleSystem.update(deltaTime);
+    }
+    
+    // Update Web3 UI
+    if (this.web3UI) {
+      this.web3UI.update(deltaTime);
+    }
+    
+    // Update session stats
+    this.sessionStats.timeSurvived = gameData.elapsedTime;
+    this.sessionStats.maxFudReached = Math.max(this.sessionStats.maxFudReached, gameData.fudLevel);
     
     // Check win condition
     if (gameData.elapsedTime >= gameData.targetTime) {
@@ -240,10 +295,10 @@ export class PlayingState extends State {
     }
     
     // Update chaos (placeholder - will be based on books on floor)
-    this.updateChaos(deltaTime);
+    this.updateFUD(deltaTime);
     
     // Check lose conditions
-    if (gameData.chaosLevel >= gameData.maxChaos) {
+    if (gameData.fudLevel >= gameData.maxFud) {
       this.game.stateManager.changeState('gameover', { won: false, reason: 'chaos' });
       return;
     }
@@ -254,93 +309,93 @@ export class PlayingState extends State {
     }
     
     // Update shelves
-    for (const shelf of this.shelves) {
-      shelf.update(deltaTime);
+    for (const wallet of this.wallets) {
+      wallet.update(deltaTime);
     }
     
     // Update books
-    for (const book of this.books) {
-      book.update(deltaTime);
+    for (const coin of this.coins) {
+      coin.update(deltaTime);
     }
     
     // Update kids
-    const kidsBeforeUpdate = this.kids.length;
-    for (const kid of this.kids) {
-      kid.update(deltaTime);
+    const kidsBeforeUpdate = this.scammers.length;
+    for (const scammer of this.scammers) {
+      scammer.update(deltaTime);
     }
     
     // Check if any kids disappeared during update
-    if (this.kids.length !== kidsBeforeUpdate) {
-      console.log(`[KID SPAWNING] WARNING: Kids count changed during update! Before: ${kidsBeforeUpdate}, After: ${this.kids.length}`);
+    if (this.scammers.length !== kidsBeforeUpdate) {
+      console.log(`[SCAMMER SPAWNING] WARNING: Scammers count changed during update! Before: ${kidsBeforeUpdate}, After: ${this.scammers.length}`);
     }
     
-    // Update kid spawning
-    this.updateKidSpawning(deltaTime);
+    // Update scammer spawning
+    this.updateScammerSpawning(deltaTime);
     
     // Check book pickup
-    this.checkBookPickup();
+    this.checkCoinPickup();
     
-    // Check book snatching from kids
-    this.checkBookSnatching();
+    // Check coin snatching from scammers
+    this.checkCoinSnatching();
     
     // Check book shelving
-    this.checkBookShelving();
+    this.checkCoinDepositing();
     
     // Update particles
     this.updateParticles(deltaTime);
     
     // Validate book states (debug)
     if (Math.random() < 0.01) { // Check 1% of frames to avoid spam
-      this.validateBookStates();
+      this.validateCoinStates();
     }
     
   }
   
-  updateChaos(deltaTime) {
+  updateFUD(deltaTime) {
     const gameData = this.game.gameData;
     
-    // Count books causing chaos (on floor or held by kids)
-    const booksOnFloor = this.books.filter(book => !book.isHeld && !book.isShelved).length;
-    const booksHeldByKids = this.books.filter(book => {
-      return book.isHeld && book.holder && book.holder.constructor.name === 'Kid';
+    // Count coins causing FUD (on floor or held by kids)
+    const booksOnFloor = this.coins.filter(coin => !coin.isHeld && !coin.isShelved).length;
+    const booksHeldByKids = this.coins.filter(coin => {
+      return coin.isHeld && coin.holder && coin.holder.constructor.name === 'Scammer';
     }).length;
-    const totalChaosBooks = booksOnFloor + booksHeldByKids;
+    const totalFUDCoins = booksOnFloor + booksHeldByKids;
     
     // Sliding chaos rate based on game progression
-    let chaosRate = 0;
-    if (totalChaosBooks > 0) {
+    let fudRate = 0;
+    if (totalFUDCoins > 0) {
       // Calculate game time in minutes
       const minutes = gameData.elapsedTime / 60;
       
       // Determine chaos rate per book based on time
-      let chaosPerBook;
+      let fudPerCoin;
       if (minutes < 3) {
-        chaosPerBook = 0.05; // 0-3 minutes: 0.05% per book per second
+        fudPerCoin = 0.05; // 0-3 minutes: 0.05% per book per second
       } else if (minutes < 5) {
-        chaosPerBook = 0.03; // 3-5 minutes: 0.03% per book per second
+        fudPerCoin = 0.03; // 3-5 minutes: 0.03% per book per second
       } else {
-        chaosPerBook = 0.01; // 5+ minutes: 0.01% per book per second
+        fudPerCoin = 0.01; // 5+ minutes: 0.01% per book per second
       }
       
-      chaosRate = totalChaosBooks * chaosPerBook;
+      fudRate = totalFUDCoins * fudPerCoin;
       
       // Apply chaos dampening from upgrades
-      const chaosDampening = this.player?.stats?.chaosDampening || 0;
-      const chaosMultiplier = 1 - (chaosDampening / 100);
-      gameData.chaosLevel += chaosRate * deltaTime * chaosMultiplier;
+      const fudDampening = this.player?.stats?.fudDampening || 0;
+      const fudMultiplier = 1 - (fudDampening / 100);
+      gameData.fudLevel += fudRate * deltaTime * fudMultiplier;
     }
     
     // Passive chaos decay when low (helps recovery)
-    if (gameData.chaosLevel > 0) {
-      if (totalChaosBooks === 0) {
+    if (gameData.fudLevel > 0) {
+      if (totalFUDCoins === 0) {
         // Slow decay when no books are out
-        gameData.chaosLevel -= 0.1 * deltaTime;
+        gameData.fudLevel -= 0.1 * deltaTime;
       }
       // Removed passive decay when under 50% - player must actively manage chaos
     }
     
     // Clamp chaos level
-    gameData.chaosLevel = Math.max(0, Math.min(gameData.maxChaos, gameData.chaosLevel));
+    gameData.fudLevel = Math.max(0, Math.min(gameData.maxFud, gameData.fudLevel));
   }
   
   render(renderer, interpolation) {
@@ -363,27 +418,27 @@ export class PlayingState extends State {
     const padding = 100; // Render entities slightly outside viewport
     
     // Render shelves (only visible ones)
-    for (const shelf of this.shelves) {
-      if (this.isInViewport(shelf, viewportX - padding, viewportY - padding, 
+    for (const wallet of this.wallets) {
+      if (this.isInViewport(wallet, viewportX - padding, viewportY - padding, 
                            viewportWidth + padding * 2, viewportHeight + padding * 2)) {
-        renderer.addToLayer('entities', shelf);
+        renderer.addToLayer('entities', wallet);
       }
     }
     
     // Render books (only visible ones that are not held or shelved)
-    for (const book of this.books) {
-      if (!book.isHeld && !book.isShelved && 
-          this.isInViewport(book, viewportX - padding, viewportY - padding, 
+    for (const coin of this.coins) {
+      if (!coin.isHeld && !coin.isShelved && 
+          this.isInViewport(coin, viewportX - padding, viewportY - padding, 
                            viewportWidth + padding * 2, viewportHeight + padding * 2)) {
-        renderer.addToLayer('entities', book);
+        renderer.addToLayer('entities', coin);
       }
     }
     
     // Render kids (only visible ones)
-    for (const kid of this.kids) {
-      if (this.isInViewport(kid, viewportX - padding, viewportY - padding, 
+    for (const scammer of this.scammers) {
+      if (this.isInViewport(scammer, viewportX - padding, viewportY - padding, 
                            viewportWidth + padding * 2, viewportHeight + padding * 2)) {
-        renderer.addToLayer('entities', kid);
+        renderer.addToLayer('entities', scammer);
       }
     }
     
@@ -401,9 +456,9 @@ export class PlayingState extends State {
     this.renderUI(ctx);
     
     // Chaos vignette effect
-    if (gameData.chaosLevel > 80) {
-      const intensity = (gameData.chaosLevel - 80) / 20;
-      this.renderChaosVignette(ctx, intensity);
+    if (gameData.fudLevel > 80) {
+      const intensity = (gameData.fudLevel - 80) / 20;
+      this.renderFUDVignette(ctx, intensity);
     }
   }
   
@@ -424,7 +479,7 @@ export class PlayingState extends State {
     ctx.fillRect(meterX - 2, meterY - 2, meterWidth + 4, meterHeight + 4);
     
     // Chaos meter fill
-    const chaosPercent = gameData.chaosLevel / gameData.maxChaos;
+    const chaosPercent = gameData.fudLevel / gameData.maxFud;
     const chaosColor = chaosPercent > 0.8 ? '#ff0000' : 
                       chaosPercent > 0.6 ? '#ff8800' : 
                       chaosPercent > 0.4 ? '#ffff00' : '#00ff00';
@@ -437,12 +492,12 @@ export class PlayingState extends State {
     ctx.font = 'bold 20px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(`CHAOS: ${Math.floor(gameData.chaosLevel)}%`, width / 2, meterY + meterHeight / 2);
+    ctx.fillText(`FUD: ${Math.floor(gameData.fudLevel)}%`, width / 2, meterY + meterHeight / 2);
     
     // Wave increase notification below chaos meter
-    if (this.maxKidsIncreaseNotification.active) {
+    if (this.maxScammersIncreaseNotification.active) {
       const notificationY = meterY + meterHeight + 15;
-      const fadeProgress = this.maxKidsIncreaseNotification.timer / this.maxKidsIncreaseNotification.duration;
+      const fadeProgress = this.maxScammersIncreaseNotification.timer / this.maxScammersIncreaseNotification.duration;
       let alpha;
       
       // Fade in for first 0.5 seconds, stay solid, then fade out in last 0.5 seconds
@@ -461,12 +516,28 @@ export class PlayingState extends State {
       ctx.strokeStyle = '#000';
       ctx.lineWidth = 3;
       
-      const notificationText = `Maximum kids allowed grew by ${this.maxKidsIncreaseNotification.increase}`;
+      const notificationText = `Maximum scammers allowed grew by ${this.maxScammersIncreaseNotification.increase}`;
       
       // Draw text outline for better visibility
       ctx.strokeText(notificationText, width / 2, notificationY);
       ctx.fillText(notificationText, width / 2, notificationY);
-      ctx.restore();
+      
+    // Render particle system
+    if (this.particleSystem) {
+      this.particleSystem.render(ctx);
+    }
+    
+    // Render weapon UI
+    if (this.weaponSystem) {
+      this.weaponSystem.render(ctx);
+    }
+    
+    // Render Web3 UI
+    if (this.web3UI) {
+      this.web3UI.render(ctx);
+    }
+
+    ctx.restore();
     }
     
     // Top Right - Timer and Kid Counter
@@ -489,7 +560,7 @@ export class PlayingState extends State {
     
     ctx.font = '18px Arial';
     ctx.fillStyle = '#fff';
-    ctx.fillText(`Kids: ${this.kids.length}/${this.maxKids}`, width - 65, 82);
+    ctx.fillText(`Scammers: ${this.scammers.length}/${this.maxScammers}`, width - 65, 82);
     
     // Left Side Panel - Player Stats
     const panelX = 10;
@@ -554,7 +625,7 @@ export class PlayingState extends State {
       ctx.font = '16px Arial';
       ctx.textAlign = 'left';
       ctx.fillStyle = '#fff';
-      ctx.fillText(`Books: ${this.player.carriedBooks.length} / ${this.player.stats.carrySlots}`, panelX + 10, panelY + 105);
+      ctx.fillText(`Books: ${this.player.carriedCoins.length} / ${this.player.stats.carrySlots}`, panelX + 10, panelY + 105);
       
       // Speed indicator (if sprinting)
       if (this.player.isSprinting && this.player.stats.stamina > 0) {
@@ -566,7 +637,7 @@ export class PlayingState extends State {
     ctx.restore();
   }
   
-  renderChaosVignette(ctx, intensity) {
+  renderFUDVignette(ctx, intensity) {
     const { width, height } = this.game;
     
     const gradient = ctx.createRadialGradient(
@@ -622,84 +693,84 @@ export class PlayingState extends State {
     });
   }
   
-  updateKidSpawning(deltaTime) {
+  updateScammerSpawning(deltaTime) {
     // Calculate current game time in minutes
     const minutes = this.game.gameData.elapsedTime / 60;
     
     // Determine max kids based on wave progression
-    let newMaxKids;
+    let newMaxScammers;
     if (minutes < 1) {
-      newMaxKids = 3; // First minute: max 3
+      newMaxScammers = 3; // First minute: max 3
     } else if (minutes < 3) {
-      newMaxKids = 5; // 1-3 minutes: max 5
+      newMaxScammers = 5; // 1-3 minutes: max 5
     } else if (minutes < 5) {
-      newMaxKids = 7; // 3-5 minutes: max 7
+      newMaxScammers = 7; // 3-5 minutes: max 7
     } else if (minutes < 10) {
-      newMaxKids = 10; // 5-10 minutes: max 10
+      newMaxScammers = 10; // 5-10 minutes: max 10
     } else {
       // After 10 minutes: increase by 2 every minute
       const additionalMinutes = Math.floor(minutes - 10);
-      newMaxKids = 10 + (additionalMinutes * 2);
+      newMaxScammers = 10 + (additionalMinutes * 2);
     }
     
     // Check if max kids increased
-    if (newMaxKids > this.maxKids) {
-      const increase = newMaxKids - this.maxKids;
-      this.maxKids = newMaxKids;
+    if (newMaxScammers > this.maxScammers) {
+      const increase = newMaxScammers - this.maxScammers;
+      this.maxScammers = newMaxScammers;
       
       // Trigger notification
-      this.maxKidsIncreaseNotification = {
+      this.maxScammersIncreaseNotification = {
         active: true,
         increase: increase,
         timer: 0,
         duration: 3
       };
       
-      console.log(`[WAVE SYSTEM] Max kids increased to ${this.maxKids} (+${increase})`);
+      console.log(`[WAVE SYSTEM] Max kids increased to ${this.maxScammers} (+${increase})`);
     }
     
     // Update notification timer
-    if (this.maxKidsIncreaseNotification.active) {
-      this.maxKidsIncreaseNotification.timer += deltaTime;
-      if (this.maxKidsIncreaseNotification.timer >= this.maxKidsIncreaseNotification.duration) {
-        this.maxKidsIncreaseNotification.active = false;
+    if (this.maxScammersIncreaseNotification.active) {
+      this.maxScammersIncreaseNotification.timer += deltaTime;
+      if (this.maxScammersIncreaseNotification.timer >= this.maxScammersIncreaseNotification.duration) {
+        this.maxScammersIncreaseNotification.active = false;
       }
     }
     
     // Don't spawn more kids if we're at the limit
-    if (this.kids.length >= this.maxKids) {
+    if (this.scammers.length >= this.maxScammers) {
       return;
     }
     
     // Update spawn timer
-    this.kidSpawnTimer -= deltaTime;
+    this.scammerSpawnTimer -= deltaTime;
     
-    if (this.kidSpawnTimer <= 0) {
+    if (this.scammerSpawnTimer <= 0) {
       // Determine aggression level based on time
       let aggressionLevel = 1; // Easy by default
       let spawnInterval = 15; // Always 15 seconds
       
       if (minutes >= 15) {
-        // After 15 minutes: more aggressive kids
+        // After 15 minutes: more aggressive scammers
         aggressionLevel = 3;
       } else if (minutes >= 10) {
-        // 10-15 minutes: aggressive kids
+        // 10-15 minutes: aggressive scammers
         aggressionLevel = 3;
       } else if (minutes >= 5) {
-        // 5-10 minutes: normal kids
+        // 5-10 minutes: normal scammers
         aggressionLevel = 2;
       }
       
-      // Spawn a new kid
+      // Spawn a new scammer
       const spawnPoint = this.spawnPoints[Math.floor(Math.random() * this.spawnPoints.length)];
-      const kid = new Kid(this.game, spawnPoint.x, spawnPoint.y, aggressionLevel);
-      this.kids.push(kid);
+      const scammer = new Scammer(this.game, spawnPoint.x, spawnPoint.y, { aggression: aggressionLevel, variant: Math.floor(Math.random() * 3) + 1 });
+      this.scammers.push(scammer);
       
       // Reset timer for next spawn
-      this.kidSpawnTimer = spawnInterval;
-      this.kidSpawnInterval = spawnInterval;
+      this.scammerSpawnTimer = spawnInterval;
+      this.scammerSpawnInterval = spawnInterval;
       
-      console.log(`[KID SPAWNING] Spawned kid #${this.kids.length}/${this.maxKids} (aggression: ${aggressionLevel}) - Next spawn in ${spawnInterval}s`);
+      console.log(`[SCAMMER SPAWNING] Spawned scammer #${this.scammers.length}/${this.maxScammers} (aggression: ${aggressionLevel}) - Next spawn in ${spawnInterval}s`);
     }
   }
   
@@ -740,14 +811,14 @@ export class PlayingState extends State {
         const color = colorDistribution[shelfIndex];
         
         // Create shelf
-        const shelf = new Shelf(this.game, x, y, color);
-        this.shelves.push(shelf);
+        const wallet = new Wallet(this.game, x, y, color);
+        this.wallets.push(wallet);
         
         // Fill shelf to capacity (6 books)
-        for (let i = 0; i < shelf.capacity; i++) {
-          const book = new Book(this.game, 0, 0, color);
-          shelf.addBook(book);
-          this.books.push(book);
+        for (let i = 0; i < wallet.capacity; i++) {
+          const coin = new Coin(this.game, 0, 0, color);
+          wallet.addCoin(coin);
+          this.coins.push(coin);
         }
         
         shelfIndex++;
@@ -756,14 +827,14 @@ export class PlayingState extends State {
     
     // Log color distribution for debugging
     const colorCounts = {};
-    this.shelves.forEach(shelf => {
-      colorCounts[shelf.color] = (colorCounts[shelf.color] || 0) + 1;
+    this.wallets.forEach(wallet => {
+      colorCounts[wallet.color] = (colorCounts[wallet.color] || 0) + 1;
     });
     console.log('[LIBRARY LAYOUT] Shelf color distribution:', colorCounts);
     console.log('[LIBRARY LAYOUT] Total books per color:', Object.entries(colorCounts).map(([color, count]) => `${color}: ${count * 6}`));
   }
   
-  isPlayerNearShelf(shelf, distance) {
+  isPlayerNearWallet(wallet, distance) {
     if (!this.player) return false;
     
     // Check if player is within distance of any edge of the shelf
@@ -772,16 +843,16 @@ export class PlayingState extends State {
     const playerTop = this.player.y;
     const playerBottom = this.player.y + this.player.height;
     
-    const shelfLeft = shelf.x;
-    const shelfRight = shelf.x + shelf.width;
-    const shelfTop = shelf.y;
-    const shelfBottom = shelf.y + shelf.height;
+    const walletLeft = wallet.x;
+    const walletRight = wallet.x + wallet.width;
+    const walletTop = wallet.y;
+    const walletBottom = wallet.y + wallet.height;
     
     // Expand shelf bounds by distance
-    const expandedLeft = shelfLeft - distance;
-    const expandedRight = shelfRight + distance;
-    const expandedTop = shelfTop - distance;
-    const expandedBottom = shelfBottom + distance;
+    const expandedLeft = walletLeft - distance;
+    const expandedRight = walletRight + distance;
+    const expandedTop = walletTop - distance;
+    const expandedBottom = walletBottom + distance;
     
     // Check if player overlaps with expanded bounds
     return !(playerLeft >= expandedRight || 
@@ -790,34 +861,34 @@ export class PlayingState extends State {
              playerBottom <= expandedTop);
   }
   
-  checkBookPickup() {
+  checkCoinPickup() {
     if (!this.player) return;
     
     const pickupRadiusPixels = this.player.stats.pickupRadius * 32;
     const playerCenterX = this.player.getCenterX();
     const playerCenterY = this.player.getCenterY();
     
-    for (const book of this.books) {
+    for (const coin of this.coins) {
       // Skip if book is already held or shelved
-      if (book.isHeld || book.isShelved) continue;
+      if (coin.isHeld || coin.isShelved) continue;
       
       // Check distance
       const distance = Math.sqrt(
-        Math.pow(book.getCenterX() - playerCenterX, 2) +
-        Math.pow(book.getCenterY() - playerCenterY, 2)
+        Math.pow(coin.getCenterX() - playerCenterX, 2) +
+        Math.pow(coin.getCenterY() - playerCenterY, 2)
       );
       
       if (distance <= pickupRadiusPixels) {
         // Try to pick up the book
-        if (this.player.pickupBook(book)) {
-          book.pickup(this.player);
+        if (this.player.pickupCoin(coin)) {
+          coin.pickup(this.player);
           
           // Track book collection
-          this.game.gameData.booksCollected++;
+          this.game.gameData.coinsCollected++;
           
           // Reduce chaos when picking up (balanced with new rates)
-          this.game.gameData.chaosLevel -= 0.5; // Much smaller reduction
-          this.game.gameData.chaosLevel = Math.max(0, this.game.gameData.chaosLevel);
+          this.game.gameData.fudLevel -= 0.5; // Much smaller reduction
+          this.game.gameData.fudLevel = Math.max(0, this.game.gameData.fudLevel);
           
           // Award XP
           this.awardXP(5);
@@ -829,23 +900,23 @@ export class PlayingState extends State {
     }
   }
   
-  checkBookShelving() {
-    if (!this.player || this.player.carriedBooks.length === 0) return;
+  checkCoinDepositing() {
+    if (!this.player || this.player.carriedCoins.length === 0) return;
     
     const returnDistance = this.player.stats.returnRadius * 32;
     
-    for (const shelf of this.shelves) {
+    for (const wallet of this.wallets) {
       // Check if player is near any edge of the shelf
-      if (this.isPlayerNearShelf(shelf, returnDistance) && shelf.hasEmptySlots()) {
+      if (this.isPlayerNearWallet(wallet, returnDistance) && wallet.canAcceptCoin()) {
         // Try to shelve matching books
-        const book = this.player.shelveBook(shelf);
-        if (book && shelf.addBook(book)) {
+        const coin = this.player.depositCoin(wallet);
+        if (coin && wallet.addCoin(coin)) {
           // Track book shelving
-          this.game.gameData.booksShelved++;
+          this.game.gameData.coinsDeposited++;
           
           // Reduce chaos when shelving (bigger reward for completing the task)
-          this.game.gameData.chaosLevel -= 1.0; // Reduced to match new chaos rates
-          this.game.gameData.chaosLevel = Math.max(0, this.game.gameData.chaosLevel);
+          this.game.gameData.fudLevel -= 1.0; // Reduced to match new chaos rates
+          this.game.gameData.fudLevel = Math.max(0, this.game.gameData.fudLevel);
           
           // Award XP
           this.awardXP(10);
@@ -873,7 +944,7 @@ export class PlayingState extends State {
     
     // Create floating XP text
     if (this.player) {
-      this.particles.push({
+      this.particleSystem.particles.push({
         type: 'xp',
         x: this.player.getCenterX(),
         y: this.player.y - 10,
@@ -904,7 +975,7 @@ export class PlayingState extends State {
   
   updateParticles(deltaTime) {
     // Update and remove expired particles
-    this.particles = this.particles.filter(particle => {
+    this.particleSystem.particles = this.particleSystem.particles.filter(particle => {
       particle.age += deltaTime;
       
       if (particle.type === 'xp') {
@@ -920,7 +991,7 @@ export class PlayingState extends State {
     renderer.addToLayer('ui', (ctx) => {
       ctx.save();
       
-      for (const particle of this.particles) {
+      for (const particle of this.particleSystem.particles) {
         if (particle.type === 'xp') {
           const alpha = 1 - (particle.age / particle.lifetime);
           ctx.globalAlpha = alpha;
@@ -939,85 +1010,85 @@ export class PlayingState extends State {
   }
   
   validateBookStates() {
-    const bookStates = {
+    const coinStates = {
       shelved: 0,
       held: 0,
       floor: 0,
       invalid: 0
     };
     
-    for (const book of this.books) {
-      if (book.isShelved && book.isHeld) {
-        console.error(`Book ${book.id} is both shelved and held!`);
-        bookStates.invalid++;
-      } else if (book.isShelved) {
-        bookStates.shelved++;
+    for (const coin of this.coins) {
+      if (coin.isShelved && coin.isHeld) {
+        console.error(`Book ${coin.id} is both shelved and held!`);
+        coinStates.invalid++;
+      } else if (coin.isShelved) {
+        coinStates.shelved++;
         // Verify book is actually in a shelf
         let foundInShelf = false;
-        for (const shelf of this.shelves) {
-          if (shelf.books.includes(book)) {
+        for (const wallet of this.wallets) {
+          if (wallet.coins.includes(coin)) {
             foundInShelf = true;
             break;
           }
         }
         if (!foundInShelf) {
-          console.error(`Book ${book.id} marked as shelved but not in any shelf!`);
+          console.error(`Book ${coin.id} marked as shelved but not in any shelf!`);
         }
-      } else if (book.isHeld) {
-        bookStates.held++;
-        if (!book.holder) {
-          console.error(`Book ${book.id} marked as held but has no holder!`);
+      } else if (coin.isHeld) {
+        coinStates.held++;
+        if (!coin.holder) {
+          console.error(`Book ${coin.id} marked as held but has no holder!`);
         }
       } else {
-        bookStates.floor++;
+        coinStates.floor++;
       }
     }
     
     // Log summary only if there are issues
-    if (bookStates.invalid > 0) {
-      console.log('Book states:', bookStates, 'Total:', this.books.length);
+    if (coinStates.invalid > 0) {
+      console.log('Book states:', coinStates, 'Total:', this.coins.length);
     }
   }
   
-  checkBookSnatching() {
-    if (!this.player || this.player.carriedBooks.length >= this.player.stats.carrySlots) return;
+  checkCoinSnatching() {
+    if (!this.player || this.player.carriedCoins.length >= this.player.stats.carrySlots) return;
     
-    // Use player's repel radius for snatching books from kids
+    // Use player's repel radius for snatching coins from scammers
     const snatchRadius = this.player.repelRadius;
     const playerCenterX = this.player.getCenterX();
     const playerCenterY = this.player.getCenterY();
     
-    for (const kid of this.kids) {
-      // Check if kid is carrying a book
-      if (!kid.carriedBook) continue;
+    for (const scammer of this.scammers) {
+      // Check if scammer is carrying a coin
+      if (!scammer.carriedCoin) continue;
       
-      // Check distance to kid
+      // Check distance to scammer
       const distance = Math.sqrt(
-        Math.pow(kid.getCenterX() - playerCenterX, 2) +
-        Math.pow(kid.getCenterY() - playerCenterY, 2)
+        Math.pow(scammer.getCenterX() - playerCenterX, 2) +
+        Math.pow(scammer.getCenterY() - playerCenterY, 2)
       );
       
       if (distance <= snatchRadius) {
-        // Snatch the book from the kid
-        const book = kid.carriedBook;
+        // Snatch the coin from the scammer
+        const coin = scammer.carriedCoin;
         
-        // Remove book from kid
-        kid.carriedBook = null;
-        kid.dropBookTimer = 0;
+        // Remove book from scammer
+        scammer.carriedCoin = null;
+        scammer.dropCoinTimer = 0;
         
         // Give book to player
-        if (this.player.pickupBook(book)) {
-          book.pickup(this.player);
+        if (this.player.pickupCoin(coin)) {
+          coin.pickup(this.player);
           
           // Track book collection
-          this.game.gameData.booksCollected++;
+          this.game.gameData.coinsCollected++;
           
           // Kid flees after being robbed
-          kid.state = 'fleeing';
+          scammer.state = 'fleeing';
           
-          // Reduce chaos when snatching (reward for catching kids)
-          this.game.gameData.chaosLevel -= 0.75; // Balanced reduction
-          this.game.gameData.chaosLevel = Math.max(0, this.game.gameData.chaosLevel);
+          // Reduce chaos when snatching (reward for catching scammers)
+          this.game.gameData.fudLevel -= 0.75; // Balanced reduction
+          this.game.gameData.fudLevel = Math.max(0, this.game.gameData.fudLevel);
           
           // Award XP for snatching
           this.awardXP(7); // Slightly more XP than ground pickup

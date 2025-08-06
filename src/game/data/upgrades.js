@@ -2,7 +2,7 @@ export const UPGRADES = {
   // Passive upgrades based on the design doc
   speed: {
     id: 'speed',
-    name: 'Comfy Shoes',
+    name: 'Rocket Boots',
     description: 'Increases movement speed by 10%',
     icon: '👟',
     maxLevel: 5, // Reduced max level since each level is more impactful
@@ -16,8 +16,8 @@ export const UPGRADES = {
   
   pickupRadius: {
     id: 'pickupRadius',
-    name: 'Long Arms',
-    description: 'Increases book pickup radius by 0.1m',
+    name: 'Magnet Hands',
+    description: 'Increases coin pickup radius by 0.1m',
     icon: '🤲',
     maxLevel: 10,
     effect: (player, level) => {
@@ -29,19 +29,19 @@ export const UPGRADES = {
   
   carrySlots: {
     id: 'carrySlots',
-    name: 'Book Belt',
-    description: 'Carry 1 additional book',
-    icon: '📚',
+    name: 'Crypto Wallet',
+    description: 'Carry 1 additional coin',
+    icon: '💰',
     maxLevel: 7,
     effect: (player, level) => {
       player.upgrade('carrySlots', 1);
     },
-    getDescription: (level) => `+${level} Book Slots`
+    getDescription: (level) => `+${level} Coin Slots`
   },
   
   stamina: {
     id: 'stamina',
-    name: 'Fitness Training',
+    name: 'HODL Power',
     description: 'Increases maximum stamina by 10',
     icon: '💪',
     maxLevel: 10,
@@ -51,21 +51,21 @@ export const UPGRADES = {
     getDescription: (level) => `+${10 * level} Max Stamina`
   },
   
-  chaosDampening: {
-    id: 'chaosDampening',
-    name: 'Zen Focus',
-    description: 'Reduces chaos gain by 2%',
-    icon: '🧘',
+  fudDampening: {
+    id: 'fudDampening',
+    name: 'Diamond Hands',
+    description: 'Reduces FUD gain by 2%',
+    icon: '💎',
     maxLevel: 10,
     effect: (player, level) => {
-      player.upgrade('chaosDampening', 2);
+      player.upgrade('fudDampening', 2);
     },
-    getDescription: (level) => `-${2 * level}% Chaos Gain`
+    getDescription: (level) => `-${2 * level}% FUD Gain`
   },
   
   xpGain: {
     id: 'xpGain',
-    name: 'Reading Glasses',
+    name: 'Moon Goggles',
     description: 'Increases XP gain by 8%',
     icon: '👓',
     maxLevel: 5,
@@ -78,8 +78,8 @@ export const UPGRADES = {
   // Future weapon skills (not implemented yet)
   shushWave: {
     id: 'shushWave',
-    name: 'Shush Wave',
-    description: 'Creates a cone of silence that stuns kids',
+    name: 'FUD Blast',
+    description: 'Creates a wave that repels scammers',
     icon: '🤫',
     maxLevel: 5,
     isWeapon: true,

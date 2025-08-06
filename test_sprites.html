@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WETCAT Sprite Test</title>
+    <style>
+        body {
+            background: #333;
+            color: white;
+            font-family: Arial;
+            padding: 20px;
+        }
+        .sprite-test {
+            border: 2px solid #0f0;
+            margin: 10px;
+            padding: 10px;
+            display: inline-block;
+            background: #666;
+        }
+        img {
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+    </style>
+</head>
+<body>
+    <h1>WETCAT Sprite Test</h1>
+    
+    <div class="sprite-test">
+        <h3>Stand Sprite</h3>
+        <img src="/sprites/wetcat_stand.png" width="64" height="80">
+    </div>
+    
+    <div class="sprite-test">
+        <h3>Walk 1 Sprite</h3>
+        <img src="/sprites/wetcat_walk1.png" width="64" height="80">
+    </div>
+    
+    <div class="sprite-test">
+        <h3>Walk 2 Sprite</h3>
+        <img src="/sprites/wetcat_walk2.png" width="64" height="80">
+    </div>
+    
+    <div class="sprite-test">
+        <h3>Stand Sprite (2x)</h3>
+        <img src="/sprites/wetcat_stand.png" width="128" height="160">
+    </div>
+    
+    <h2>Asset Loading Test</h2>
+    <div id="load-test"></div>
+    
+    <script>
+        // Test loading
+        const testDiv = document.getElementById('load-test');
+        const sprites = [
+            '/sprites/wetcat_stand.png',
+            '/sprites/wetcat_walk1.png',
+            '/sprites/wetcat_walk2.png'
+        ];
+        
+        sprites.forEach(src => {
+            const img = new Image();
+            img.onload = () => {
+                testDiv.innerHTML += `<p style="color: #0f0">✓ Loaded: ${src}</p>`;
+            };
+            img.onerror = () => {
+                testDiv.innerHTML += `<p style="color: #f00">✗ Failed: ${src}</p>`;
+            };
+            img.src = src;
+        });
+    </script>
+</body>
+</html>

@@ -4,6 +4,7 @@ import { InputManager } from './systems/InputManager.js';
 import { AssetLoader } from './systems/AssetLoader.js';
 import { Camera } from './systems/Camera.js';
 import { Renderer } from './systems/Renderer.js';
+import { GameDebugger } from './debug/GameDebugger.js';
 
 export class Game {
   constructor(canvasId) {
@@ -35,10 +36,13 @@ export class Game {
     
     // Debug info
     this.debug = {
-      showFPS: false, // Disabled FPS counter
-      showCollisionBoxes: false,
+      showFPS: true, // Enable for alpha testing
+      showCollisionBoxes: true,
       showGrid: false
     };
+    
+    // Alpha mode debugger
+    this.debugger = new GameDebugger(this);
     
     // Game-specific data
     this.gameData = {
@@ -109,9 +113,9 @@ export class Game {
     const assets = {
       images: {
         woodFloor: `/sprites/wood_floor_tiles.jpg${cacheBuster}`,
-        librarianStand: `/sprites/librarian_stand.png${cacheBuster}`,
-        librarianWalk1: `/sprites/librarian_walk1.png${cacheBuster}`,
-        librarianWalk2: `/sprites/librarian_walk2.png${cacheBuster}`,
+        librarianStand: `/sprites/wetcat_stand.png${cacheBuster}`,
+        librarianWalk1: `/sprites/wetcat_walk1.png${cacheBuster}`,
+        librarianWalk2: `/sprites/wetcat_walk2.png${cacheBuster}`,
         // Kid sprites
         kid1Stand: `/sprites/kid1_stand.png${cacheBuster}`,
         kid1Walk: `/sprites/kid1_walk.png${cacheBuster}`,

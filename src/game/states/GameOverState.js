@@ -204,10 +204,10 @@ export class GameOverState extends State {
     
     // Draw box background with transparency
     drawRoundedRect(boxX, boxY, boxWidth, boxHeight, borderRadius);
-    ctx.fillStyle = 'rgba(245, 230, 211, 0.9)'; // Semi-transparent
+    ctx.fillStyle = 'rgba(26, 26, 46, 0.9)'; // Semi-transparent dark blue
     ctx.fill();
     
-    ctx.strokeStyle = '#3d2914';
+    ctx.strokeStyle = '#FFD93D';
     ctx.lineWidth = 4;
     ctx.stroke();
     
@@ -216,19 +216,19 @@ export class GameOverState extends State {
     ctx.textBaseline = 'middle';
     
     // Title
-    ctx.fillStyle = this.won ? '#228B22' : '#8B0000';
+    ctx.fillStyle = this.won ? '#4CAF50' : '#FF4444';
     ctx.font = 'bold 64px Arial';
     ctx.fillText(this.won ? 'VICTORY!' : 'GAME OVER', width / 2, boxY + 80);
     
     // Subtitle
-    ctx.fillStyle = '#3d2914';
+    ctx.fillStyle = '#FFD93D';
     ctx.font = '24px Arial';
     if (this.won) {
-      ctx.fillText('You survived 30 minutes of library chaos!', width / 2, boxY + 130);
+      ctx.fillText('You survived 30 minutes of crypto chaos! $WETCAT TO THE MOON!', width / 2, boxY + 130);
     } else {
-      let message = 'The library descended into chaos...';
+      let message = 'The FUD got too strong...';
       if (this.reason === 'chaos') {
-        message = 'The chaos overwhelmed the library!';
+        message = 'You got REKT by the FUD!';
       }
       ctx.fillText(message, width / 2, boxY + 130);
     }
@@ -245,10 +245,10 @@ export class GameOverState extends State {
     const statLines = [
       `Time Survived: ${minutes}:${seconds.toString().padStart(2, '0')}`,
       `Final Level: ${this.stats.level}`,
-      `Peak Chaos: ${this.stats.chaosLevel}%`,
-      `Books Collected: ${this.stats.booksCollected}`,
-      `Books Shelved: ${this.stats.booksShelved}`,
-      `Kids Repelled: ${this.stats.kidsRepelled}`
+      `Peak FUD: ${this.stats.chaosLevel}%`,
+      `$WETCAT Collected: ${this.stats.booksCollected}`,
+      `Coins Delivered: ${this.stats.booksShelved}`,
+      `Scammers Splashed: ${this.stats.kidsRepelled}`
     ];
     
     statLines.forEach(line => {
@@ -263,11 +263,11 @@ export class GameOverState extends State {
       const y = boxY + 480 + index * 50;
       
       if (index === this.selectedIndex) {
-        ctx.fillStyle = '#8B4513';
+        ctx.fillStyle = '#FFD93D';
         ctx.fillRect(boxX + 150, y - 20, boxWidth - 300, 40);
-        ctx.fillStyle = '#f5e6d3';
+        ctx.fillStyle = '#1a1a2e';
       } else {
-        ctx.fillStyle = '#3d2914';
+        ctx.fillStyle = '#FFD93D';
       }
       
       ctx.fillText(item.text, width / 2, y);

@@ -13,7 +13,7 @@ export class Player extends Entity {
       carrySlots: 5,
       stamina: 100,
       maxStamina: 100,
-      chaosDampening: 0,
+      fudDampening: 0,
       xpMultiplier: 1.0 // For Reading Glasses upgrade
     };
     
@@ -25,11 +25,14 @@ export class Player extends Entity {
     this.sprintMultiplier = 1.5;
     this.isSprinting = false;
     
-    // Books carried
-    this.carriedBooks = [];
+    // Coins carried
+    this.carriedCoins = [];
     
     // Animation
-    this.facing = 'down'; // up, down, left, right
+    this.facing = 'down';
+    
+    // Buffs from weapons/abilities
+    this.buffs = {}; // up, down, left, right
     this.lastHorizontalFacing = 'left'; // Track last horizontal direction for sprite flipping
     this.animationTimer = 0;
     this.animationFrame = 0;
@@ -221,6 +224,34 @@ export class Player extends Entity {
       }
     );
     
+    
+    // Render HODL Shield if active
+    if (this.buffs?.hodlShield) {
+      ctx.save();
+      ctx.globalAlpha = 0.5 + Math.sin(Date.now() * 0.005) * 0.2;
+      
+      // Shield bubble
+      const gradient = ctx.createRadialGradient(
+        this.getCenterX(), this.getCenterY(), 20,
+        this.getCenterX(), this.getCenterY(), 60
+      );
+      gradient.addColorStop(0, 'rgba(185, 242, 255, 0.8)');
+      gradient.addColorStop(0.5, 'rgba(185, 242, 255, 0.4)');
+      gradient.addColorStop(1, 'rgba(185, 242, 255, 0)');
+      
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(this.getCenterX(), this.getCenterY(), 60, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Shield border
+      ctx.strokeStyle = '#B9F2FF';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      ctx.restore();
+    }
+
     // Draw pickup radius indicator when Long Arms upgrade is active
     if (this.upgradeLevels?.pickupRadius > 0) {
       ctx.save();
@@ -290,30 +321,30 @@ export class Player extends Entity {
       ctx.restore();
     }
     
-    // Draw carried books indicator with colors
-    if (this.carriedBooks.length > 0) {
+    // Draw carried coins indicator with colors
+    if (this.carriedCoins.length > 0) {
       ctx.save();
       
-      // Draw book count
+      // Draw coin count
       ctx.fillStyle = '#000';
       ctx.font = 'bold 12px Arial';
       ctx.textAlign = 'center';
       ctx.fillText(
-        `${this.carriedBooks.length}/${this.stats.carrySlots}`,
+        `${this.carriedCoins.length}/${this.stats.carrySlots}`,
         this.getCenterX(),
         this.y - 5
       );
       
-      // Draw colored indicators for each book type
-      const bookColors = {};
-      this.carriedBooks.forEach(book => {
-        bookColors[book.color] = (bookColors[book.color] || 0) + 1;
+      // Draw colored indicators for each coin type
+      const coinColors = {};
+      this.carriedCoins.forEach(coin => {
+        coinColors[coin.color] = (coinColors[coin.color] || 0) + 1;
       });
       
       let offsetX = -20;
-      Object.entries(bookColors).forEach(([color, count]) => {
-        // Draw colored circle for each book type
-        const colorHex = this.getBookColorHex(color);
+      Object.entries(coinColors).forEach(([color, count]) => {
+        // Draw colored circle for each coin type
+        const colorHex = this.getCoinColorHex(color);
         ctx.fillStyle = colorHex;
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 1;
@@ -337,32 +368,32 @@ export class Player extends Entity {
     }
   }
   
-  pickupBook(book) {
-    if (this.carriedBooks.length >= this.stats.carrySlots) {
+  pickupCoin(coin) {
+    if (this.carriedCoins.length >= this.stats.carrySlots) {
       return false;
     }
     
-    this.carriedBooks.push(book);
+    this.carriedCoins.push(coin);
     return true;
   }
   
-  shelveBook(shelf) {
-    // Find a book that matches this shelf's color
-    const bookIndex = this.carriedBooks.findIndex(
-      book => book.color === shelf.color
+  depositCoin(wallet) {
+    // Find a coin that matches this wallet's color
+    const coinIndex = this.carriedCoins.findIndex(
+      coin => coin.color === wallet.color
     );
     
-    if (bookIndex !== -1) {
-      const book = this.carriedBooks.splice(bookIndex, 1)[0];
-      return book;
+    if (coinIndex !== -1) {
+      const coin = this.carriedCoins.splice(coinIndex, 1)[0];
+      return coin;
     }
     
     return null;
   }
   
-  dropAllBooks() {
-    const dropped = [...this.carriedBooks];
-    this.carriedBooks = [];
+  dropAllCoins() {
+    const dropped = [...this.carriedCoins];
+    this.carriedCoins = [];
     return dropped;
   }
   
@@ -386,8 +417,8 @@ export class Player extends Entity {
         this.stats.maxStamina += amount;
         this.stats.stamina += amount;
         break;
-      case 'chaosDampening':
-        this.stats.chaosDampening += amount;
+      case 'fudDampening':
+        this.stats.fudDampening += amount;
         break;
       case 'xpMultiplier':
         this.stats.xpMultiplier += amount;
@@ -424,7 +455,7 @@ export class Player extends Entity {
              playerBottom <= entityTop);
   }
   
-  getBookColorHex(color) {
+  getCoinColorHex(color) {
     const colors = {
       red: '#ff4444',
       blue: '#4444ff',
@@ -456,5 +487,15 @@ export class Player extends Entity {
     // Stop all sounds when player is cleaned up
     this.stopOutOfBreathSound();
     this.isPlayingOutOfBreath = false;
+  }
+
+  isInvulnerable() {
+    return this.buffs?.hodlShield !== undefined;
+  }
+  
+  getDistanceTo(entity) {
+    const dx = this.getCenterX() - entity.getCenterX();
+    const dy = this.getCenterY() - entity.getCenterY();
+    return Math.sqrt(dx * dx + dy * dy);
   }
 }

@@ -11,9 +11,9 @@ export class MenuState extends State {
     this.selectedIndex = 0;
     this.showingInstructions = false;
     
-    // Video background
-    this.video = null;
-    this.videoLoaded = false;
+    // Background image
+    this.backgroundImage = null;
+    this.imageLoaded = false;
     
     // Background music
     this.bgMusic = null;
@@ -27,42 +27,24 @@ export class MenuState extends State {
     this.selectedIndex = 0;
     this.showingInstructions = false;
     
-    // Create and setup video if not already created
-    if (!this.video) {
-      this.video = document.createElement('video');
-      this.video.src = '/menu_background.mp4';
-      this.video.loop = true;
-      this.video.muted = true;
-      this.video.autoplay = true;
+    // Create and setup background image if not already created
+    if (!this.backgroundImage) {
+      this.backgroundImage = new Image();
+      this.backgroundImage.src = '/menu_background.jpg';
       
-      // Handle various video events for better reliability
-      this.video.addEventListener('canplay', () => {
-        this.videoLoaded = true;
-        this.video.play().catch(e => console.log('Video play failed:', e));
-      });
+      this.backgroundImage.onload = () => {
+        this.imageLoaded = true;
+      };
       
-      // Also try playing on loadedmetadata
-      this.video.addEventListener('loadedmetadata', () => {
-        this.video.play().catch(e => console.log('Video play on metadata failed:', e));
-      });
-      
-      // Handle errors
-      this.video.addEventListener('error', (e) => {
-        console.error('Video loading error:', e);
-        this.videoLoaded = false;
-      });
-      
-      // Force load the video
-      this.video.load();
-    } else {
-      // Resume playing if returning to menu
-      this.videoLoaded = true; // Assume it's loaded if we already created it
-      this.video.play().catch(e => console.log('Video play failed:', e));
+      this.backgroundImage.onerror = (e) => {
+        console.error('Background image loading error:', e);
+        this.imageLoaded = false;
+      };
     }
     
     // Create and setup background music if not already created
     if (!this.bgMusic) {
-      this.bgMusic = new Audio('/intro_music.mp3');
+      this.bgMusic = new Audio('/wetcat-song-1.mp3');
       this.bgMusic.loop = true;
       this.bgMusic.volume = 0.5; // Set to 50% volume
       
@@ -87,11 +69,6 @@ export class MenuState extends State {
   }
   
   exit() {
-    // Pause video when leaving menu
-    if (this.video) {
-      this.video.pause();
-    }
-    
     // Pause music when leaving menu
     if (this.bgMusic) {
       this.bgMusic.pause();
@@ -160,39 +137,49 @@ export class MenuState extends State {
     const ctx = renderer.ctx;
     const { width, height } = this.game;
     
-    // Draw video background if loaded
-    if (this.video && this.videoLoaded && !this.video.paused) {
-      try {
-        // Scale video to cover the entire canvas
-        const videoAspect = this.video.videoWidth / this.video.videoHeight;
-        const canvasAspect = width / height;
-        
-        let drawWidth, drawHeight, drawX, drawY;
-        
-        if (videoAspect > canvasAspect) {
-          // Video is wider - fit height, crop width
-          drawHeight = height;
-          drawWidth = height * videoAspect;
-          drawX = (width - drawWidth) / 2;
-          drawY = 0;
-        } else {
-          // Video is taller - fit width, crop height
-          drawWidth = width;
-          drawHeight = width / videoAspect;
-          drawX = 0;
-          drawY = (height - drawHeight) / 2;
-        }
-        
-        ctx.drawImage(this.video, drawX, drawY, drawWidth, drawHeight);
-      } catch (e) {
-        // Fallback to solid color if video fails
-        ctx.fillStyle = '#f5e6d3';
-        ctx.fillRect(0, 0, width, height);
+    // Draw background image if loaded
+    if (this.backgroundImage && this.imageLoaded) {
+      // Scale image to cover the entire canvas
+      const imgAspect = this.backgroundImage.width / this.backgroundImage.height;
+      const canvasAspect = width / height;
+      
+      let drawWidth, drawHeight, drawX, drawY;
+      
+      if (imgAspect > canvasAspect) {
+        // Image is wider - fit height, crop width
+        drawHeight = height;
+        drawWidth = height * imgAspect;
+        drawX = (width - drawWidth) / 2;
+        drawY = 0;
+      } else {
+        // Image is taller - fit width, crop height
+        drawWidth = width;
+        drawHeight = width / imgAspect;
+        drawX = 0;
+        drawY = (height - drawHeight) / 2;
       }
+      
+      ctx.drawImage(this.backgroundImage, drawX, drawY, drawWidth, drawHeight);
     } else {
-      // Fallback background color
-      ctx.fillStyle = '#f5e6d3';
+      // Fallback background with gradient
+      const gradient = ctx.createLinearGradient(0, 0, width, height);
+      gradient.addColorStop(0, '#1a1a2e');
+      gradient.addColorStop(0.5, '#2d2d4e');
+      gradient.addColorStop(1, '#1a1a2e');
+      ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
+      
+      // Add some crypto-themed decorations
+      ctx.save();
+      ctx.globalAlpha = 0.1;
+      ctx.fillStyle = '#FFD93D';
+      ctx.font = '48px Arial';
+      for (let i = 0; i < 10; i++) {
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        ctx.fillText('$', x, y);
+      }
+      ctx.restore();
     }
     
     
@@ -215,11 +202,11 @@ export class MenuState extends State {
       
       if (index === this.selectedIndex) {
         // Highlight selected item with semi-transparent background
-        ctx.fillStyle = 'rgba(139, 69, 19, 0.8)';
+        ctx.fillStyle = 'rgba(255, 217, 61, 0.8)';
         ctx.fillRect(width / 2 - 200, y - 25, 400, 50);
         
         // Selected text
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = '#1a1a2e';
         ctx.fillText(item.text, width / 2, y);
       } else {
         // Non-selected items with shadow
@@ -266,26 +253,26 @@ export class MenuState extends State {
     ctx.fill();
     
     // Main box with transparency
-    ctx.fillStyle = 'rgba(245, 230, 211, 0.95)'; // Light brown with 95% opacity
+    ctx.fillStyle = 'rgba(26, 26, 46, 0.95)'; // Dark blue with 95% opacity
     drawRoundedRect(boxX, boxY, boxWidth, boxHeight, borderRadius);
     ctx.fill();
     
     // Box border
-    ctx.strokeStyle = '#8B4513';
+    ctx.strokeStyle = '#FFD93D';
     ctx.lineWidth = 3;
     drawRoundedRect(boxX, boxY, boxWidth, boxHeight, borderRadius);
     ctx.stroke();
     
     // Title
-    ctx.fillStyle = '#3d2914';
+    ctx.fillStyle = '#FFD93D';
     ctx.font = 'bold 42px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('HOW TO PLAY', width / 2, boxY + 50);
+    ctx.fillText('HOW TO GET SOAKED', width / 2, boxY + 50);
     
     ctx.font = '20px Arial'; // Reduced from 24px
     const instructions = [
-      'Survive 30 minutes of library chaos!',
+      'Survive 30 minutes of crypto chaos!',
       '',
       'CONTROLS:',
       'WASD/Arrow Keys - Move',
@@ -293,10 +280,10 @@ export class MenuState extends State {
       'P/Escape - Pause',
       '',
       'GAMEPLAY:',
-      '• Pick up books automatically when near them',
-      '• Return books to matching colored shelves',
-      '• Kids will steal books - chase them away!',
-      '• Keep Chaos below 100% or you lose',
+      '• Collect $WETCAT coins automatically when near them',
+      '• Deliver coins to crypto wallets',
+      '• Scammers will steal coins - splash them away!',
+      '• Keep FUD below 100% or you get rekt',
       '• Level up to choose upgrades',
       '',
       'Press Enter or Escape to return'
