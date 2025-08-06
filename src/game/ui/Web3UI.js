@@ -1,4 +1,6 @@
 import { wetcatWeb3 } from '../../web3/WETCATWeb3.js';
+import { worldID } from '../../web3/WorldIDIntegration.js';
+import { worldApp } from '../../web3/WorldAppIntegration.js';
 
 export class Web3UI {
   constructor(game) {
@@ -16,6 +18,10 @@ export class Web3UI {
     this.panelY = 170; // Below player stats
     this.panelWidth = 250;
     this.panelHeight = 100;
+    
+    // World ID status
+    this.worldIdVerified = false;
+    this.verificationMultiplier = 1.0;
 
     // Setup Web3 listeners
     this.setupWeb3Listeners();
@@ -90,14 +96,18 @@ export class Web3UI {
   }
 
   drawPanel(ctx) {
+    // Adjust height if World ID panel is needed
+    const panelHeight = this.connectionStatus === 'connected' && !worldID.isVerified() ? 
+      this.panelHeight + 60 : this.panelHeight;
+    
     // Panel background
     ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-    ctx.fillRect(this.panelX, this.panelY, this.panelWidth, this.panelHeight);
+    ctx.fillRect(this.panelX, this.panelY, this.panelWidth, panelHeight);
 
     // Panel border
     ctx.strokeStyle = '#FFD93D';
     ctx.lineWidth = 2;
-    ctx.strokeRect(this.panelX, this.panelY, this.panelWidth, this.panelHeight);
+    ctx.strokeRect(this.panelX, this.panelY, this.panelWidth, panelHeight);
 
     // Title
     ctx.fillStyle = '#FFD93D';
@@ -148,6 +158,33 @@ export class Web3UI {
         ctx.fillStyle = '#4CAF50';
         ctx.font = '12px Arial';
         ctx.fillText(`+${sessionEarnings} this session`, this.panelX + 10, this.panelY + 85);
+      }
+      
+      // World ID verification status
+      if (worldID.isVerified()) {
+        // Show verified status
+        ctx.fillStyle = '#4CAF50';
+        ctx.font = '12px Arial';
+        const verificationLevel = worldID.getVerificationLevel();
+        const multiplier = worldID.getRewardMultiplier();
+        ctx.fillText(`✓ Verified (${verificationLevel}) - ${multiplier}x rewards`, this.panelX + 10, this.panelY + 105);
+      } else {
+        // Show verify button
+        const verifyButtonY = this.panelY + 105;
+        ctx.fillStyle = '#1F1F23';
+        ctx.fillRect(this.panelX + 10, verifyButtonY, this.panelWidth - 20, 25);
+        
+        ctx.strokeStyle = '#4CAF50';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(this.panelX + 10, verifyButtonY, this.panelWidth - 20, 25);
+        
+        ctx.fillStyle = '#4CAF50';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Verify with World ID (2x rewards)', this.panelX + this.panelWidth / 2, verifyButtonY + 16);
+        
+        // Store verify button bounds
+        this.verifyButton = { x: this.panelX + 10, y: verifyButtonY, width: this.panelWidth - 20, height: 25 };
       }
 
     } else if (this.connectionStatus === 'error') {
@@ -201,8 +238,35 @@ export class Web3UI {
         this.connect();
         return true;
       }
+    } else if (this.connectionStatus === 'connected' && !worldID.isVerified()) {
+      // Check if verify button was clicked
+      if (this.verifyButton &&
+          x >= this.verifyButton.x &&
+          x <= this.verifyButton.x + this.verifyButton.width &&
+          y >= this.verifyButton.y &&
+          y <= this.verifyButton.y + this.verifyButton.height) {
+        this.verifyWithWorldID();
+        return true;
+      }
     }
     return false;
+  }
+  
+  async verifyWithWorldID() {
+    try {
+      const verification = await worldID.verifyWithOrb();
+      console.log('World ID verification successful:', verification);
+      
+      // Update UI to show verified status
+      this.verificationMultiplier = worldID.getRewardMultiplier();
+      
+      // Trigger haptic feedback in World App
+      if (worldApp.isWorldApp) {
+        worldApp.triggerHaptic('medium');
+      }
+    } catch (error) {
+      console.error('World ID verification failed:', error);
+    }
   }
 }
 
