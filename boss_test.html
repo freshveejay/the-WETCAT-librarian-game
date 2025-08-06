@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WETCAT Boss Battle Testing</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background-color: #1a1a1a;
+      color: #fff;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #FFD93D;
+      text-align: center;
+    }
+    .game-container {
+      width: 100%;
+      height: 600px;
+      border: 2px solid #FFD93D;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .control-group {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 217, 61, 0.3);
+    }
+    .control-group h3 {
+      margin-top: 0;
+      color: #FFD93D;
+    }
+    button {
+      background: #FFD93D;
+      color: #000;
+      border: none;
+      padding: 10px 15px;
+      margin: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+    button:hover {
+      background: #ffc700;
+      transform: translateY(-2px);
+      box-shadow: 0 2px 10px rgba(255, 217, 61, 0.5);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    .status {
+      background: rgba(0, 0, 0, 0.5);
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    .status span {
+      color: #00ff00;
+    }
+    .warning {
+      color: #ff6b6b;
+      font-weight: bold;
+    }
+    .success {
+      color: #00ff00;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎮 WETCAT Boss Battle Testing Suite 🎮</h1>
+    
+    <div class="game-container">
+      <iframe id="gameFrame" src="/"></iframe>
+    </div>
+    
+    <div class="controls">
+      <div class="control-group">
+        <h3>🌊 Wave Control</h3>
+        <button onclick="skipToWave(5)">Skip to Wave 5 (FUD Dragon)</button>
+        <button onclick="skipToWave(10)">Skip to Wave 10 (Rug Pull)</button>
+        <button onclick="skipToWave(15)">Skip to Wave 15 (Whale)</button>
+        <div class="status">
+          Current Wave: <span id="currentWave">1</span>
+        </div>
+      </div>
+      
+      <div class="control-group">
+        <h3>👾 Boss Spawning</h3>
+        <button onclick="spawnBoss('FUDDragon')">Spawn FUD Dragon</button>
+        <button onclick="spawnBoss('RugPullMonster')">Spawn Rug Pull Monster</button>
+        <button onclick="spawnBoss('WhaleManipulator')">Spawn Whale Manipulator</button>
+        <div class="status">
+          Boss Status: <span id="bossStatus">None</span>
+        </div>
+      </div>
+      
+      <div class="control-group">
+        <h3>🛡️ Player Control</h3>
+        <button onclick="toggleGodMode()">Toggle God Mode</button>
+        <button onclick="giveXP(1000)">Give 1000 XP</button>
+        <button onclick="clearFUD()">Clear FUD</button>
+        <div class="status">
+          God Mode: <span id="godMode">OFF</span><br>
+          FUD Level: <span id="fudLevel">0</span>%
+        </div>
+      </div>
+      
+      <div class="control-group">
+        <h3>📊 Boss Info</h3>
+        <div class="status">
+          Boss Health: <span id="bossHealth">N/A</span><br>
+          Boss Phase: <span id="bossPhase">N/A</span><br>
+          Boss Attack: <span id="bossAttack">N/A</span>
+        </div>
+      </div>
+    </div>
+    
+    <div style="margin-top: 20px; text-align: center;">
+      <p class="warning">⚠️ Make sure to run 'npm run dev' first!</p>
+      <p>This testing suite allows you to quickly test boss battles without playing through the entire game.</p>
+    </div>
+  </div>
+  
+  <script>
+    let gameWindow = null;
+    let godModeEnabled = false;
+    let updateInterval = null;
+    
+    // Wait for iframe to load
+    document.getElementById('gameFrame').onload = function() {
+      gameWindow = document.getElementById('gameFrame').contentWindow;
+      
+      // Start monitoring game state
+      updateInterval = setInterval(updateStatus, 100);
+    };
+    
+    function skipToWave(wave) {
+      if (!gameWindow || !gameWindow.gameEngine) {
+        alert('Game not loaded! Make sure the game is running.');
+        return;
+      }
+      
+      try {
+        const state = gameWindow.gameEngine.stateManager.currentState;
+        if (state && state.constructor.name === 'PlayingState') {
+          state.currentWave = wave;
+          state.onWaveChange(wave);
+          console.log(`Skipped to wave ${wave}`);
+        }
+      } catch (e) {
+        console.error('Error skipping wave:', e);
+      }
+    }
+    
+    function spawnBoss(bossType) {
+      if (!gameWindow || !gameWindow.gameEngine) {
+        alert('Game not loaded! Make sure the game is running.');
+        return;
+      }
+      
+      try {
+        const state = gameWindow.gameEngine.stateManager.currentState;
+        if (state && state.constructor.name === 'PlayingState') {
+          // Import boss class dynamically
+          const BossClass = gameWindow[bossType];
+          if (BossClass) {
+            state.spawnBoss(BossClass);
+            console.log(`Spawned ${bossType}`);
+          }
+        }
+      } catch (e) {
+        console.error('Error spawning boss:', e);
+      }
+    }
+    
+    function toggleGodMode() {
+      if (!gameWindow || !gameWindow.gameEngine) return;
+      
+      godModeEnabled = !godModeEnabled;
+      try {
+        const state = gameWindow.gameEngine.stateManager.currentState;
+        if (state && state.player) {
+          if (godModeEnabled) {
+            // Store original values
+            state.player._originalHealth = state.player.health;
+            state.player.health = 99999;
+            state.player.invulnerable = true;
+          } else {
+            // Restore original values
+            state.player.health = state.player._originalHealth || 100;
+            state.player.invulnerable = false;
+          }
+        }
+        document.getElementById('godMode').textContent = godModeEnabled ? 'ON' : 'OFF';
+        document.getElementById('godMode').style.color = godModeEnabled ? '#00ff00' : '#ff0000';
+      } catch (e) {
+        console.error('Error toggling god mode:', e);
+      }
+    }
+    
+    function giveXP(amount) {
+      if (!gameWindow || !gameWindow.gameEngine) return;
+      
+      try {
+        const state = gameWindow.gameEngine.stateManager.currentState;
+        if (state && state.awardXP) {
+          state.awardXP(amount);
+          console.log(`Awarded ${amount} XP`);
+        }
+      } catch (e) {
+        console.error('Error giving XP:', e);
+      }
+    }
+    
+    function clearFUD() {
+      if (!gameWindow || !gameWindow.gameEngine) return;
+      
+      try {
+        if (gameWindow.gameEngine.gameData) {
+          gameWindow.gameEngine.gameData.fudLevel = 0;
+          console.log('FUD cleared');
+        }
+      } catch (e) {
+        console.error('Error clearing FUD:', e);
+      }
+    }
+    
+    function updateStatus() {
+      if (!gameWindow || !gameWindow.gameEngine) return;
+      
+      try {
+        const state = gameWindow.gameEngine.stateManager.currentState;
+        const gameData = gameWindow.gameEngine.gameData;
+        
+        if (state && state.constructor.name === 'PlayingState') {
+          // Update wave
+          document.getElementById('currentWave').textContent = state.currentWave || 1;
+          
+          // Update FUD
+          if (gameData) {
+            document.getElementById('fudLevel').textContent = Math.round(gameData.fudLevel || 0);
+          }
+          
+          // Update boss status
+          if (state.currentBoss && !state.currentBoss.isDead) {
+            const boss = state.currentBoss;
+            document.getElementById('bossStatus').textContent = boss.constructor.name;
+            document.getElementById('bossStatus').style.color = '#ff6b6b';
+            
+            // Boss health
+            const healthPercent = Math.round((boss.health / boss.maxHealth) * 100);
+            document.getElementById('bossHealth').textContent = `${boss.health}/${boss.maxHealth} (${healthPercent}%)`;
+            
+            // Boss phase
+            document.getElementById('bossPhase').textContent = boss.phase || 1;
+            
+            // Boss attack
+            document.getElementById('bossAttack').textContent = boss.currentAttack || 'Idle';
+          } else {
+            document.getElementById('bossStatus').textContent = 'None';
+            document.getElementById('bossStatus').style.color = '#00ff00';
+            document.getElementById('bossHealth').textContent = 'N/A';
+            document.getElementById('bossPhase').textContent = 'N/A';
+            document.getElementById('bossAttack').textContent = 'N/A';
+          }
+        }
+      } catch (e) {
+        // Silently fail to avoid console spam
+      }
+    }
+  </script>
+</body>
+</html>

@@ -6,6 +6,9 @@ import { Scammer } from '../entities/Scammer.js';
 import { WeaponSystem } from '../systems/WeaponSystem.js';
 import { ParticleSystem } from '../effects/ParticleSystem.js';
 import { Web3UI } from '../ui/Web3UI.js';
+import { FUDDragon } from '../entities/bosses/FUDDragon.js';
+import { RugPullMonster } from '../entities/bosses/RugPullMonster.js';
+import { WhaleManipulator } from '../entities/bosses/WhaleManipulator.js';
 
 export class PlayingState extends State {
   constructor(game) {
@@ -71,6 +74,23 @@ export class PlayingState extends State {
       { x: 800, y: 50 }, // Top entrance
       { x: 800, y: 990 } // Bottom entrance
     ];
+    
+    // Boss system
+    this.currentBoss = null;
+    this.bossWarningTimer = 0;
+    this.showBossWarning = false;
+    this.currentWave = 0;
+    this.bossSpawnWaves = {
+      5: FUDDragon,
+      10: RugPullMonster,
+      15: WhaleManipulator
+    };
+    
+    // Attack telegraphs
+    this.telegraphs = [];
+    
+    // Tsunami waves (for WhaleManipulator)
+    this.tsunamiWaves = [];
   }
 
   enter() {
@@ -345,6 +365,17 @@ export class PlayingState extends State {
     // Update particles
     this.updateParticles(deltaTime);
 
+    // Update boss
+    if (this.currentBoss) {
+      this.updateBoss(deltaTime);
+    }
+    
+    // Update attack telegraphs
+    this.updateTelegraphs(deltaTime);
+    
+    // Update tsunami waves
+    this.updateTsunamiWaves(deltaTime);
+
     // Validate book states (debug)
     if (Math.random() < 0.01) { // Check 1% of frames to avoid spam
       this.validateCoinStates();
@@ -450,8 +481,19 @@ export class PlayingState extends State {
       renderer.addToLayer('entities', this.player);
     }
 
+    // Render boss
+    if (this.currentBoss && !this.currentBoss.isDead) {
+      renderer.addToLayer('entities', this.currentBoss);
+    }
+
     // Render all layers
     renderer.render(interpolation);
+    
+    // Render telegraphs
+    this.renderTelegraphs(ctx);
+    
+    // Render tsunami waves  
+    this.renderTsunamiWaves(ctx);
 
     // Render UI
     this.renderUI(ctx);
@@ -468,6 +510,12 @@ export class PlayingState extends State {
     const { width, height } = this.game;
 
     ctx.save();
+    
+    // Render boss UI
+    this.renderBossUI(ctx);
+    
+    // Render boss warning
+    this.renderBossWarning(ctx);
 
     // Top Center - Chaos meter
     const meterWidth = 300;
@@ -697,6 +745,13 @@ export class PlayingState extends State {
   updateScammerSpawning(deltaTime) {
     // Calculate current game time in minutes
     const minutes = this.game.gameData.elapsedTime / 60;
+    
+    // Calculate current wave (1 wave per 2 minutes)
+    const newWave = Math.floor(minutes / 2) + 1;
+    if (newWave > this.currentWave) {
+      this.currentWave = newWave;
+      this.onWaveChange(newWave);
+    }
 
     // Determine max kids based on wave progression
     let newMaxScammers;
@@ -1129,5 +1184,255 @@ export class PlayingState extends State {
       this.shelfSound.currentTime = 0;
       this.shelfSound.play().catch(e => console.log('Shelf sound play failed:', e));
     }
+  }
+  
+  onWaveChange(wave) {
+    // Check if this wave spawns a boss
+    const BossClass = this.bossSpawnWaves[wave];
+    if (BossClass && !this.currentBoss) {
+      this.showBossWarning = true;
+      this.bossWarningTimer = 5; // 5 second warning
+      
+      // Clear all scammers when boss spawns
+      setTimeout(() => {
+        this.scammers.forEach(scammer => {
+          scammer.isDead = true;
+        });
+        this.scammers = [];
+        
+        // Spawn the boss
+        this.spawnBoss(BossClass);
+      }, 5000);
+    }
+  }
+  
+  spawnBoss(BossClass) {
+    const centerX = this.worldWidth / 2;
+    const centerY = this.worldHeight / 2;
+    
+    this.currentBoss = new BossClass(this.game, centerX - 80, centerY - 80);
+    this.showBossWarning = false;
+    
+    // Boss music would go here
+    // this.playBossMusic();
+    
+    // Announce boss
+    this.showNotification(`${this.currentBoss.constructor.name.toUpperCase()} APPEARS!`, 3);
+  }
+  
+  updateBoss(deltaTime) {
+    if (!this.currentBoss) return;
+    
+    this.currentBoss.update(deltaTime);
+    
+    // Check collision with player attacks
+    if (this.player) {
+      // Check weapon damage
+      this.weaponSystem.activeWeapons.forEach(weapon => {
+        if (weapon.currentCooldown <= 0.1 && weapon.id === 'diamond_slap') {
+          const distance = this.player.getDistanceTo(this.currentBoss);
+          if (distance < weapon.range) {
+            this.currentBoss.takeDamage(50);
+          }
+        }
+      });
+    }
+    
+    // Remove dead boss
+    if (this.currentBoss.isDead) {
+      this.currentBoss = null;
+      // Resume normal spawning
+      this.scammerSpawnTimer = 0;
+    }
+  }
+  
+  updateTelegraphs(deltaTime) {
+    this.telegraphs = this.telegraphs.filter(telegraph => {
+      telegraph.duration -= deltaTime;
+      return telegraph.duration > 0;
+    });
+  }
+  
+  updateTsunamiWaves(deltaTime) {
+    this.tsunamiWaves = this.tsunamiWaves.filter(wave => {
+      wave.x += wave.speed * deltaTime;
+      wave.life -= deltaTime;
+      
+      // Check collision with player
+      if (this.player) {
+        const playerLeft = this.player.x;
+        const playerRight = this.player.x + this.player.width;
+        const waveRight = wave.x + wave.width;
+        
+        if (waveRight > playerLeft && wave.x < playerRight &&
+            this.player.y < wave.y + wave.height) {
+          // Hit by tsunami
+          this.player.dropAllCoins();
+          this.game.gameData.fudLevel = Math.min(
+            this.game.gameData.maxFud,
+            this.game.gameData.fudLevel + 25
+          );
+          
+          // Knockback
+          this.player.x += wave.speed * deltaTime * 0.5;
+        }
+      }
+      
+      return wave.life > 0 && wave.x < this.game.camera.x + this.game.camera.width + 100;
+    });
+  }
+  
+  renderBossUI(ctx) {
+    if (!this.currentBoss) return;
+    
+    // Draw boss health bar at top of screen
+    const barWidth = 400;
+    const barHeight = 30;
+    const barX = (this.game.width - barWidth) / 2;
+    const barY = 20;
+    
+    // Background
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(barX - 5, barY - 5, barWidth + 10, barHeight + 10);
+    
+    // Health bar background
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.fillRect(barX, barY, barWidth, barHeight);
+    
+    // Health bar
+    const healthPercent = this.currentBoss.health / this.currentBoss.maxHealth;
+    const gradient = ctx.createLinearGradient(barX, barY, barX + barWidth * healthPercent, barY);
+    
+    if (healthPercent > 0.5) {
+      gradient.addColorStop(0, '#00ff00');
+      gradient.addColorStop(1, '#00aa00');
+    } else if (healthPercent > 0.25) {
+      gradient.addColorStop(0, '#ffff00');
+      gradient.addColorStop(1, '#aaaa00');
+    } else {
+      gradient.addColorStop(0, '#ff0000');
+      gradient.addColorStop(1, '#aa0000');
+    }
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+    
+    // Border
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(barX, barY, barWidth, barHeight);
+    
+    // Boss name
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 20px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    const bossName = this.currentBoss.constructor.name.replace(/([A-Z])/g, ' $1').trim();
+    ctx.fillText(bossName, this.game.width / 2, barY - 5);
+    
+    // Health text
+    ctx.font = '16px Arial';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(
+      `${Math.ceil(this.currentBoss.health)} / ${this.currentBoss.maxHealth}`,
+      this.game.width / 2,
+      barY + barHeight / 2
+    );
+  }
+  
+  renderBossWarning(ctx) {
+    if (!this.showBossWarning || this.bossWarningTimer <= 0) return;
+    
+    // Flash background
+    if (Math.floor(this.bossWarningTimer * 4) % 2 === 0) {
+      ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+      ctx.fillRect(0, 0, this.game.width, this.game.height);
+    }
+    
+    // Warning text
+    ctx.save();
+    ctx.fillStyle = '#ff0000';
+    ctx.font = 'bold 48px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 4;
+    
+    const text = 'BOSS INCOMING!';
+    const x = this.game.width / 2;
+    const y = this.game.height / 2;
+    
+    // Shake effect
+    const shakeX = (Math.random() - 0.5) * 10;
+    const shakeY = (Math.random() - 0.5) * 10;
+    
+    ctx.strokeText(text, x + shakeX, y + shakeY);
+    ctx.fillText(text, x + shakeX, y + shakeY);
+    
+    // Countdown
+    ctx.font = 'bold 36px Arial';
+    ctx.fillStyle = '#fff';
+    const countdown = Math.ceil(this.bossWarningTimer);
+    ctx.strokeText(countdown, x, y + 60);
+    ctx.fillText(countdown, x, y + 60);
+    
+    ctx.restore();
+  }
+  
+  renderTelegraphs(ctx) {
+    ctx.save();
+    
+    this.telegraphs.forEach(telegraph => {
+      const alpha = telegraph.duration / telegraph.maxDuration;
+      ctx.fillStyle = `rgba(255, 0, 0, ${alpha * 0.3})`;
+      ctx.strokeStyle = `rgba(255, 0, 0, ${alpha * 0.8})`;
+      ctx.lineWidth = 2;
+      
+      if (telegraph.type === 'circle') {
+        ctx.beginPath();
+        ctx.arc(telegraph.x, telegraph.y, telegraph.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      } else if (telegraph.type === 'rect') {
+        ctx.fillRect(telegraph.x, telegraph.y, telegraph.width, telegraph.height);
+        ctx.strokeRect(telegraph.x, telegraph.y, telegraph.width, telegraph.height);
+      }
+    });
+    
+    ctx.restore();
+  }
+  
+  renderTsunamiWaves(ctx) {
+    ctx.save();
+    
+    this.tsunamiWaves.forEach(wave => {
+      // Wave gradient
+      const gradient = ctx.createLinearGradient(
+        wave.x, wave.y,
+        wave.x + wave.width, wave.y
+      );
+      gradient.addColorStop(0, 'rgba(26, 188, 156, 0.8)');
+      gradient.addColorStop(0.5, 'rgba(52, 152, 219, 0.9)');
+      gradient.addColorStop(1, 'rgba(26, 188, 156, 0.6)');
+      
+      ctx.fillStyle = gradient;
+      ctx.fillRect(wave.x, wave.y, wave.width, wave.height);
+      
+      // Foam on top
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      for (let x = 0; x < wave.width; x += 20) {
+        const foamY = Math.sin((wave.x + x) * 0.05) * 10;
+        ctx.beginPath();
+        ctx.arc(wave.x + x, wave.y + foamY, 10, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+    
+    ctx.restore();
+  }
+  
+  showNotification(text, duration = 2) {
+    // This would be implemented with a notification system
+    console.log(`[NOTIFICATION] ${text}`);
   }
 }

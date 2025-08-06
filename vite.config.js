@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/game/',
+  base: '/wetcat-librarian/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
