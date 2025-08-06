@@ -1,0 +1,154 @@
+{
+  "schema_version": "1.0",
+  "app": {
+    "id": "wetcat-librarian",
+    "name": "WETCAT Librarian",
+    "short_name": "WETCAT",
+    "description": "A strategic underwater puzzle adventure where players collect WETCAT tokens while exploring mysterious ocean depths. Verify with World ID to unlock double rewards and exclusive features!",
+    "category": "games",
+    "subcategory": "puzzle",
+    "tags": ["puzzle", "strategy", "underwater", "tokens", "rewards", "web3"],
+    "version": "1.0.0",
+    "developer": {
+      "name": "WETCAT Games",
+      "website": "https://wetcat-librarian.com",
+      "support_email": "support@wetcat-librarian.com"
+    }
+  },
+  "urls": {
+    "app_url": "https://wetcat-librarian.com",
+    "success_url": "https://wetcat-librarian.com/verified",
+    "privacy_policy": "https://wetcat-librarian.com/privacy",
+    "terms_of_service": "https://wetcat-librarian.com/terms"
+  },
+  "world_id": {
+    "app_id": "app_staging_YOUR_APP_ID",
+    "action_id": "play_wetcat_game",
+    "verification_level": ["orb", "device"],
+    "features": {
+      "anonymous_verification": true,
+      "reward_multiplier": true,
+      "unique_human_rewards": true
+    }
+  },
+  "features": {
+    "world_app_browser": true,
+    "native_integration": true,
+    "deep_linking": true,
+    "in_app_verification": true
+  },
+  "rewards": {
+    "verified_user_bonus": {
+      "orb": {
+        "multiplier": 2.0,
+        "description": "2x rewards for Orb-verified players"
+      },
+      "device": {
+        "multiplier": 1.5,
+        "description": "1.5x rewards for Device-verified players"
+      }
+    },
+    "daily_rewards": {
+      "enabled": true,
+      "unique_human_only": true,
+      "reset_time": "00:00 UTC"
+    }
+  },
+  "assets": {
+    "icon": {
+      "1024": "https://wetcat-librarian.com/assets/icon-1024.png",
+      "512": "https://wetcat-librarian.com/assets/icon-512.png",
+      "256": "https://wetcat-librarian.com/assets/icon-256.png",
+      "128": "https://wetcat-librarian.com/assets/icon-128.png"
+    },
+    "screenshots": {
+      "phone": [
+        {
+          "url": "https://wetcat-librarian.com/assets/screenshots/phone-1.png",
+          "caption": "Explore underwater worlds as WETCAT"
+        },
+        {
+          "url": "https://wetcat-librarian.com/assets/screenshots/phone-2.png",
+          "caption": "Collect rare WETCAT tokens"
+        },
+        {
+          "url": "https://wetcat-librarian.com/assets/screenshots/phone-3.png",
+          "caption": "World ID verified players earn 2x rewards"
+        },
+        {
+          "url": "https://wetcat-librarian.com/assets/screenshots/phone-4.png",
+          "caption": "Strategic puzzle gameplay"
+        },
+        {
+          "url": "https://wetcat-librarian.com/assets/screenshots/phone-5.png",
+          "caption": "Compete on global leaderboards"
+        }
+      ],
+      "tablet": [
+        {
+          "url": "https://wetcat-librarian.com/assets/screenshots/tablet-1.png",
+          "caption": "Immersive underwater environments"
+        },
+        {
+          "url": "https://wetcat-librarian.com/assets/screenshots/tablet-2.png",
+          "caption": "Complex puzzles and hidden treasures"
+        },
+        {
+          "url": "https://wetcat-librarian.com/assets/screenshots/tablet-3.png",
+          "caption": "Exclusive rewards for verified humans"
+        }
+      ]
+    },
+    "promotional": {
+      "feature_graphic": "https://wetcat-librarian.com/assets/feature-graphic.png",
+      "banner": "https://wetcat-librarian.com/assets/banner.png"
+    }
+  },
+  "localization": {
+    "default_language": "en",
+    "supported_languages": ["en", "es", "fr", "de", "ja", "ko", "zh"],
+    "translations": {
+      "es": {
+        "name": "WETCAT Bibliotecario",
+        "short_description": "Aventura de puzzles submarinos con tokens WETCAT",
+        "description": "Una aventura estratégica de puzzles submarinos donde los jugadores coleccionan tokens WETCAT mientras exploran las misteriosas profundidades del océano. ¡Verifica con World ID para desbloquear recompensas dobles!"
+      }
+    }
+  },
+  "requirements": {
+    "min_world_app_version": "1.0.0",
+    "network": "optimism",
+    "supported_platforms": ["web", "ios", "android"]
+  },
+  "analytics": {
+    "enabled": true,
+    "track_verification_events": true,
+    "track_reward_claims": true
+  },
+  "social": {
+    "twitter": "@wetcat_game",
+    "discord": "https://discord.gg/wetcat",
+    "telegram": "https://t.me/wetcatgame"
+  },
+  "compliance": {
+    "age_rating": "E",
+    "content_descriptors": ["Mild Fantasy Violence"],
+    "data_collection": {
+      "world_id_data": ["nullifier_hash", "verification_level"],
+      "game_data": ["score", "progress", "achievements"],
+      "analytics": ["play_time", "level_completion"]
+    }
+  },
+  "changelog": {
+    "1.0.0": {
+      "date": "2024-01-15",
+      "changes": [
+        "Initial World App Store release",
+        "World ID integration for verified humans",
+        "2x rewards for Orb-verified players",
+        "50 underwater levels to explore",
+        "Global leaderboards"
+      ]
+    }
+  }
+}

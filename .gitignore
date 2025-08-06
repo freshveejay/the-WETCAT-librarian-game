@@ -26,7 +26,32 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+.env.development
+.env.staging
+.env.production
 
 # Package lock files (optional - uncomment if you prefer not to commit)
 # package-lock.json
 # yarn.lock
+.vercel
+
+# Deployment artifacts
+deployments/
+deployment-report-*.txt
+
+# Local storage
+data/
+logs/
+temp/
+
+# Hardhat files
+cache/
+artifacts/
+typechain/
+typechain-types/
+coverage/
+coverage.json
+hardhat.log
+
+# Contract deployment
+contracts/deployments/

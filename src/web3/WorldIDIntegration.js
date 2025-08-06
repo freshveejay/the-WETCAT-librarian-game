@@ -1,8 +1,23 @@
-import { IDKitWidget, VerificationLevel } from '@worldcoin/idkit';
+// WORLD ID CONFIGURATION INSTRUCTIONS:
+// 1. Install the World ID SDK: npm install @worldcoin/idkit
+// 2. Uncomment the import below after installation
+// 3. Replace APP_ID with your actual App ID from https://developer.worldcoin.org
+// 4. For production, use 'app_' prefix instead of 'app_staging_'
+
+// import { IDKitWidget, VerificationLevel } from '@worldcoin/idkit';
+// Temporarily commented out - using mock implementation
+
+const VerificationLevel = {
+  Orb: 'orb',
+  Device: 'device'
+};
 
 export class WorldIDIntegration {
   constructor() {
     // World ID App configuration
+    // IMPORTANT: Replace with your actual App ID from the World ID Developer Portal
+    // Staging: app_staging_a1b2c3d4e5f6
+    // Production: app_a1b2c3d4e5f6
     this.APP_ID = 'app_staging_YOUR_APP_ID'; // TODO: Replace with your World ID app ID
     this.ACTION_ID = 'play_wetcat_game';
     
@@ -97,7 +112,9 @@ export class WorldIDIntegration {
       }
     };
 
-    // Note: In production, use @worldcoin/idkit React component
+    // TODO: After installing @worldcoin/idkit, replace this with actual IDKit component
+    // Example React implementation:
+    // return <IDKitWidget {...config} />
     console.log('IDKit config:', config);
     alert('World ID verification would appear here. Install @worldcoin/idkit for full integration.');
     
@@ -148,6 +165,9 @@ export class WorldIDIntegration {
   }
 
   async verifyOnBackend(verificationResponse) {
+    // IMPORTANT: You must implement this endpoint on your backend
+    // See WORLD_ID_SETUP.md for example implementation
+    // The backend should verify the proof with World ID's API
     try {
       const response = await fetch('/api/verify-worldid', {
         method: 'POST',
@@ -168,6 +188,8 @@ export class WorldIDIntegration {
       return data.verified;
     } catch (error) {
       console.error('Backend verification error:', error);
+      // In development, you might want to return true for testing
+      // return window.location.hostname === 'localhost';
       return false;
     }
   }
