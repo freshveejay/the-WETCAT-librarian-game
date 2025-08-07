@@ -142,7 +142,7 @@ export class PlayingState extends State {
 
     // Start background music
     if (!this.bgMusic) {
-      this.bgMusic = new Audio('/wetcat-song-2.mp3');
+      this.bgMusic = new Audio('wetcat-song-2.mp3');
       this.bgMusic.loop = true;
       this.bgMusic.volume = 0.4; // Slightly lower volume for gameplay
 
@@ -161,14 +161,14 @@ export class PlayingState extends State {
     if (this.pickupSounds.length === 0) {
       // Create 5 audio instances for overlapping pickup sounds
       for (let i = 0; i < 5; i++) {
-        const audio = new Audio('/pickup_coin.mp3');
+        const audio = new Audio('pickup_coin.mp3');
         audio.volume = 0.7; // Increased from 0.5 for better audibility
         this.pickupSounds.push(audio);
       }
     }
 
     if (!this.shelfSound) {
-      this.shelfSound = new Audio('/book_on_wallet.mp3');
+      this.shelfSound = new Audio('book_on_wallet.mp3');
       this.shelfSound.volume = 0.6;
     }
   }

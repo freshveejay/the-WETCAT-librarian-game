@@ -19,7 +19,7 @@ export class PausedState extends State {
 
     // Initialize select sound if not already created
     if (!this.selectSound) {
-      this.selectSound = new Audio('/menu_select.mp3');
+      this.selectSound = new Audio('menu_select.mp3');
       this.selectSound.volume = 0.7;
     }
   }

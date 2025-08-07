@@ -27,16 +27,16 @@ export class MenuState extends State {
     this.selectedIndex = 0;
     this.showingInstructions = false;
 
-    // DEBUG: Auto-start game after 3 seconds
-    setTimeout(() => {
-      console.log('🚀 AUTO-STARTING GAME FOR DEBUG...');
-      this.startGame();
-    }, 3000);
+    // DEBUG: Auto-start game after 3 seconds - DISABLED
+    // setTimeout(() => {
+    //   console.log('🚀 AUTO-STARTING GAME FOR DEBUG...');
+    //   this.startGame();
+    // }, 3000);
 
     // Create and setup background image if not already created
     if (!this.backgroundImage) {
       this.backgroundImage = new Image();
-      this.backgroundImage.src = '/menu_background.jpg';
+      this.backgroundImage.src = 'menu_background.jpg';
 
       this.backgroundImage.onload = () => {
         this.imageLoaded = true;
@@ -50,7 +50,7 @@ export class MenuState extends State {
 
     // Create and setup background music if not already created
     if (!this.bgMusic) {
-      this.bgMusic = new Audio('/wetcat-song-1.mp3');
+      this.bgMusic = new Audio('wetcat-song-1.mp3');
       this.bgMusic.loop = true;
       this.bgMusic.volume = 0.5; // Set to 50% volume
 
@@ -69,7 +69,7 @@ export class MenuState extends State {
 
     // Create menu selection sound if not already created
     if (!this.selectSound) {
-      this.selectSound = new Audio('/menu_select.mp3');
+      this.selectSound = new Audio('menu_select.mp3');
       this.selectSound.volume = 0.7; // Slightly louder than music
     }
   }
@@ -131,6 +131,7 @@ export class MenuState extends State {
           // Check for click
           if (input.isMouseButtonPressed(0)) { // 0 = left mouse button
             console.log('Mouse clicked on menu item:', this.menuItems[this.selectedIndex].text);
+            this.playSelectSound();
             this.menuItems[this.selectedIndex].action();
           }
           break;

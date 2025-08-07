@@ -468,7 +468,7 @@ export class Player extends Entity {
 
   playOutOfBreathSound() {
     if (!this.outOfBreathSound) {
-      this.outOfBreathSound = new Audio('/out_of_breath.mp3');
+      this.outOfBreathSound = new Audio('out_of_breath.mp3');
       this.outOfBreathSound.volume = 0.6;
       this.outOfBreathSound.loop = true;
     }

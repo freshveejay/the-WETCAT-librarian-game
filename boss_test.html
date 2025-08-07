@@ -153,18 +153,22 @@
     document.getElementById('gameFrame').onload = function() {
       gameWindow = document.getElementById('gameFrame').contentWindow;
       
-      // Start monitoring game state
-      updateInterval = setInterval(updateStatus, 100);
+      // Wait a bit for game to initialize
+      setTimeout(() => {
+        // Start monitoring game state
+        updateInterval = setInterval(updateStatus, 100);
+        console.log('Boss test suite initialized. Game window:', gameWindow);
+      }, 2000);
     };
     
     function skipToWave(wave) {
-      if (!gameWindow || !gameWindow.gameEngine) {
+      if (!gameWindow || !gameWindow.game) {
         alert('Game not loaded! Make sure the game is running.');
         return;
       }
       
       try {
-        const state = gameWindow.gameEngine.stateManager.currentState;
+        const state = gameWindow.game.stateManager.currentState;
         if (state && state.constructor.name === 'PlayingState') {
           state.currentWave = wave;
           state.onWaveChange(wave);
@@ -176,13 +180,13 @@
     }
     
     function spawnBoss(bossType) {
-      if (!gameWindow || !gameWindow.gameEngine) {
+      if (!gameWindow || !gameWindow.game) {
         alert('Game not loaded! Make sure the game is running.');
         return;
       }
       
       try {
-        const state = gameWindow.gameEngine.stateManager.currentState;
+        const state = gameWindow.game.stateManager.currentState;
         if (state && state.constructor.name === 'PlayingState') {
           // Import boss class dynamically
           const BossClass = gameWindow[bossType];
@@ -197,11 +201,11 @@
     }
     
     function toggleGodMode() {
-      if (!gameWindow || !gameWindow.gameEngine) return;
+      if (!gameWindow || !gameWindow.game) return;
       
       godModeEnabled = !godModeEnabled;
       try {
-        const state = gameWindow.gameEngine.stateManager.currentState;
+        const state = gameWindow.game.stateManager.currentState;
         if (state && state.player) {
           if (godModeEnabled) {
             // Store original values
@@ -222,10 +226,10 @@
     }
     
     function giveXP(amount) {
-      if (!gameWindow || !gameWindow.gameEngine) return;
+      if (!gameWindow || !gameWindow.game) return;
       
       try {
-        const state = gameWindow.gameEngine.stateManager.currentState;
+        const state = gameWindow.game.stateManager.currentState;
         if (state && state.awardXP) {
           state.awardXP(amount);
           console.log(`Awarded ${amount} XP`);
@@ -236,11 +240,11 @@
     }
     
     function clearFUD() {
-      if (!gameWindow || !gameWindow.gameEngine) return;
+      if (!gameWindow || !gameWindow.game) return;
       
       try {
-        if (gameWindow.gameEngine.gameData) {
-          gameWindow.gameEngine.gameData.fudLevel = 0;
+        if (gameWindow.game?.gameData) {
+          gameWindow.game.gameData.fudLevel = 0;
           console.log('FUD cleared');
         }
       } catch (e) {
@@ -249,11 +253,11 @@
     }
     
     function updateStatus() {
-      if (!gameWindow || !gameWindow.gameEngine) return;
+      if (!gameWindow || !gameWindow.game) return;
       
       try {
-        const state = gameWindow.gameEngine.stateManager.currentState;
-        const gameData = gameWindow.gameEngine.gameData;
+        const state = gameWindow.game?.stateManager?.currentState;
+        const gameData = gameWindow.game?.gameData;
         
         if (state && state.constructor.name === 'PlayingState') {
           // Update wave

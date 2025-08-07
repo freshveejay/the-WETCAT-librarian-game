@@ -50,7 +50,13 @@ export class InputManager {
     window.addEventListener('keyup', (e) => this.handleKeyUp(e));
 
     // Mouse events
-    this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+    this.canvas.addEventListener('mousedown', (e) => {
+      // Ensure canvas has focus when clicked
+      if (document.activeElement !== this.canvas) {
+        this.canvas.focus();
+      }
+      this.handleMouseDown(e);
+    });
     this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
     this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
     this.canvas.addEventListener('wheel', (e) => this.handleMouseWheel(e));

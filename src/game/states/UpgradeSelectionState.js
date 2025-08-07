@@ -37,12 +37,12 @@ export class UpgradeSelectionState extends State {
 
     // Initialize select sound if not already created
     if (!this.selectSound) {
-      this.selectSound = new Audio('/menu_select.mp3');
+      this.selectSound = new Audio('menu_select.mp3');
       this.selectSound.volume = 0.7;
     }
 
     // Play level up yay sound
-    const yaySound = new Audio('/yay.mp3');
+    const yaySound = new Audio('yay.mp3');
     yaySound.volume = 0.5; // Reduced from 0.8 to be less jarring
     yaySound.play().catch(e => console.log('Yay sound play failed:', e));
   }

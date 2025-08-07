@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WETCAT Game Loading Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    .test-section {
+      margin-bottom: 30px;
+      border: 1px solid #666;
+      padding: 15px;
+      border-radius: 5px;
+    }
+    .status {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 3px;
+      margin-left: 10px;
+    }
+    .success {
+      background: #4CAF50;
+      color: white;
+    }
+    .error {
+      background: #f44336;
+      color: white;
+    }
+    .loading {
+      background: #ff9800;
+      color: white;
+    }
+    .test-item {
+      margin: 10px 0;
+      padding: 10px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+    }
+    #game-canvas {
+      border: 2px solid #FFD93D;
+      display: block;
+      margin: 20px 0;
+    }
+    pre {
+      background: #333;
+      padding: 10px;
+      border-radius: 3px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>WETCAT Game Loading Test</h1>
+
+  <div class="test-section">
+    <h2>Canvas Test</h2>
+    <canvas id="game-canvas" width="640" height="360"></canvas>
+    <div class="test-item">
+      Canvas creation: <span id="canvas-status" class="status loading">Testing...</span>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>Asset Loading Test</h2>
+    <div id="asset-tests"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Game Initialization Test</h2>
+    <div id="game-init-test"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Console Output</h2>
+    <pre id="console-output"></pre>
+  </div>
+
+  <script>
+    // Override console.log to capture output
+    const consoleOutput = document.getElementById('console-output');
+    const originalLog = console.log;
+    const originalError = console.error;
+    
+    console.log = function(...args) {
+      originalLog.apply(console, args);
+      consoleOutput.textContent += '[LOG] ' + args.join(' ') + '\n';
+    };
+    
+    console.error = function(...args) {
+      originalError.apply(console, args);
+      consoleOutput.textContent += '[ERROR] ' + args.join(' ') + '\n';
+    };
+
+    // Test canvas
+    const canvas = document.getElementById('game-canvas');
+    const canvasStatus = document.getElementById('canvas-status');
+    
+    if (canvas && canvas.getContext) {
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#4169E1';
+      ctx.fillRect(0, 0, 100, 100);
+      ctx.fillStyle = '#fff';
+      ctx.font = '20px Arial';
+      ctx.fillText('Canvas OK', 10, 50);
+      canvasStatus.textContent = 'Success';
+      canvasStatus.className = 'status success';
+    } else {
+      canvasStatus.textContent = 'Failed';
+      canvasStatus.className = 'status error';
+    }
+
+    // Test asset loading
+    const assetTests = document.getElementById('asset-tests');
+    const assetsToTest = [
+      { name: 'Menu Background', url: '/menu_background.jpg', type: 'image' },
+      { name: 'WETCAT Stand Sprite', url: '/sprites/wetcat_stand.png', type: 'image' },
+      { name: 'Wood Floor', url: '/sprites/wood_floor_tiles.jpg', type: 'image' },
+      { name: 'Intro Music', url: '/wetcat-song-1.mp3', type: 'audio' },
+      { name: 'Menu Select Sound', url: '/menu_select.mp3', type: 'audio' }
+    ];
+
+    assetsToTest.forEach(asset => {
+      const testDiv = document.createElement('div');
+      testDiv.className = 'test-item';
+      testDiv.innerHTML = `${asset.name}: <span class="status loading">Loading...</span>`;
+      assetTests.appendChild(testDiv);
+      
+      const status = testDiv.querySelector('.status');
+      
+      if (asset.type === 'image') {
+        const img = new Image();
+        img.onload = () => {
+          status.textContent = 'Loaded';
+          status.className = 'status success';
+          console.log(`Image loaded: ${asset.name}`);
+        };
+        img.onerror = (e) => {
+          status.textContent = 'Failed';
+          status.className = 'status error';
+          console.error(`Failed to load image: ${asset.name}`, e);
+        };
+        img.src = asset.url;
+      } else if (asset.type === 'audio') {
+        const audio = new Audio();
+        audio.addEventListener('loadeddata', () => {
+          status.textContent = 'Loaded';
+          status.className = 'status success';
+          console.log(`Audio loaded: ${asset.name}`);
+        });
+        audio.onerror = (e) => {
+          status.textContent = 'Failed';
+          status.className = 'status error';
+          console.error(`Failed to load audio: ${asset.name}`, e);
+        };
+        audio.src = asset.url;
+        audio.load();
+      }
+    });
+
+    // Test game initialization
+    const gameInitTest = document.getElementById('game-init-test');
+    
+    async function testGameInit() {
+      const testDiv = document.createElement('div');
+      testDiv.className = 'test-item';
+      testDiv.innerHTML = 'Loading Game module: <span class="status loading">Loading...</span>';
+      gameInitTest.appendChild(testDiv);
+      
+      const status = testDiv.querySelector('.status');
+      
+      try {
+        const gameModule = await import('/src/game/Game.js');
+        status.textContent = 'Module loaded';
+        status.className = 'status success';
+        console.log('Game module loaded successfully');
+        
+        // Try to create game instance
+        const testDiv2 = document.createElement('div');
+        testDiv2.className = 'test-item';
+        testDiv2.innerHTML = 'Creating Game instance: <span class="status loading">Testing...</span>';
+        gameInitTest.appendChild(testDiv2);
+        
+        const status2 = testDiv2.querySelector('.status');
+        
+        try {
+          const game = new gameModule.Game('game-canvas');
+          status2.textContent = 'Success';
+          status2.className = 'status success';
+          console.log('Game instance created successfully');
+          
+          // Test initialization
+          const testDiv3 = document.createElement('div');
+          testDiv3.className = 'test-item';
+          testDiv3.innerHTML = 'Initializing Game: <span class="status loading">Testing...</span>';
+          gameInitTest.appendChild(testDiv3);
+          
+          const status3 = testDiv3.querySelector('.status');
+          
+          try {
+            await game.init();
+            status3.textContent = 'Success';
+            status3.className = 'status success';
+            console.log('Game initialized successfully');
+          } catch (e) {
+            status3.textContent = 'Failed';
+            status3.className = 'status error';
+            console.error('Game initialization failed:', e);
+          }
+          
+        } catch (e) {
+          status2.textContent = 'Failed';
+          status2.className = 'status error';
+          console.error('Failed to create game instance:', e);
+        }
+        
+      } catch (e) {
+        status.textContent = 'Failed';
+        status.className = 'status error';
+        console.error('Failed to load game module:', e);
+      }
+    }
+    
+    // Run tests after page loads
+    window.addEventListener('load', () => {
+      setTimeout(testGameInit, 1000);
+    });
+  </script>
+</body>
+</html>

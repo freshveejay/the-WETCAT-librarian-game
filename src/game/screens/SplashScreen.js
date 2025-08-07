@@ -5,7 +5,7 @@ export class SplashScreen {
     this.timer = 0;
     this.logoLoaded = false;
     this.logo = new Image();
-    this.logo.src = '/wetcat-logo.png';
+    this.logo.src = 'wetcat-logo.png';
     this.logo.onload = () => this.logoLoaded = true;
   }
 

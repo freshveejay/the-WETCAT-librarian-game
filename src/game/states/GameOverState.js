@@ -25,13 +25,13 @@ export class GameOverState extends State {
 
     // Initialize select sound if not already created
     if (!this.selectSound) {
-      this.selectSound = new Audio('/menu_select.mp3');
+      this.selectSound = new Audio('menu_select.mp3');
       this.selectSound.volume = 0.7;
     }
 
     // Play "uh oh" sound if player lost
     if (!this.won) {
-      const uhOhSound = new Audio('/uh_oh.mp3');
+      const uhOhSound = new Audio('uh_oh.mp3');
       uhOhSound.volume = 0.6;
       uhOhSound.play().catch(e => console.log('Uh oh sound play failed:', e));
     }
@@ -39,7 +39,7 @@ export class GameOverState extends State {
     // Create and setup video if not already created
     if (!this.video) {
       this.video = document.createElement('video');
-      this.video.src = '/menu_background.mp4';
+      this.video.src = 'menu_background.mp4';
       this.video.loop = true;
       this.video.muted = true;
       this.video.autoplay = true;

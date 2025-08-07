@@ -170,17 +170,28 @@ export class AssetLoader {
 
   // Generate placeholder assets for development
   generatePlaceholderAssets() {
-    // Player sprite
-    this.assets.set('librarian', this.createPlaceholderImage(32, 48, '#4169E1', 'P'));
+    // WETCAT sprites
+    this.assets.set('wetcat', this.createPlaceholderImage(48, 64, '#4169E1', 'W'));
+    this.assets.set('wetcatStand', this.createPlaceholderImage(48, 64, '#4169E1', 'W'));
+    this.assets.set('wetcatWalk1', this.createPlaceholderImage(48, 64, '#4169E1', 'W1'));
+    this.assets.set('wetcatWalk2', this.createPlaceholderImage(48, 64, '#4169E1', 'W2'));
 
-    // Kid sprite
-    this.assets.set('kid', this.createPlaceholderImage(24, 36, '#FF6347', 'K'));
+    // Scammer sprites
+    this.assets.set('scammer1Stand', this.createPlaceholderImage(32, 48, '#FF6347', 'S1'));
+    this.assets.set('scammer1Walk', this.createPlaceholderImage(32, 48, '#FF6347', 'S1'));
+    this.assets.set('scammer2Stand', this.createPlaceholderImage(32, 48, '#FFA500', 'S2'));
+    this.assets.set('scammer2Walk', this.createPlaceholderImage(32, 48, '#FFA500', 'S2'));
+    this.assets.set('scammer3Stand', this.createPlaceholderImage(32, 48, '#FF69B4', 'S3'));
+    this.assets.set('scammer3Walk', this.createPlaceholderImage(32, 48, '#FF69B4', 'S3'));
 
-    // Book sprite
-    this.assets.set('book', this.createPlaceholderImage(16, 20, '#8B4513', 'B'));
+    // Coin sprite
+    this.assets.set('coin', this.createPlaceholderImage(24, 24, '#FFD700', '$'));
 
-    // Shelf sprite
-    this.assets.set('shelf', this.createPlaceholderImage(64, 96, '#654321', 'S'));
+    // Wallet sprite
+    this.assets.set('wallet', this.createPlaceholderImage(64, 64, '#8B4513', 'W'));
+    
+    // Wood floor
+    this.assets.set('woodFloor', this.createPlaceholderImage(512, 512, '#8B6F47', ''));
 
     // Floor tiles
     this.assets.set('tiles', this.createPlaceholderImage(32, 32, '#D2691E'));

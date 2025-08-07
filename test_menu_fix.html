@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Menu Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #222;
+            color: #fff;
+            font-family: monospace;
+        }
+        #status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            border: 1px solid #0f0;
+            z-index: 1000;
+        }
+        #game-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+        }
+        #game-canvas {
+            border: 2px solid #0f0;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="status">
+        <div>Status: <span id="game-status">Loading...</span></div>
+        <div>State: <span id="game-state">None</span></div>
+        <div>Mouse: <span id="mouse-pos">0, 0</span></div>
+        <div>Clicks: <span id="click-count">0</span></div>
+        <div>Keys: <span id="key-pressed">None</span></div>
+    </div>
+    
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        <div id="loading" style="display:none;">Loading...</div>
+    </div>
+
+    <script type="module">
+        import { Game } from './src/game/Game.js';
+        
+        let clickCount = 0;
+        
+        async function init() {
+            const statusEl = document.getElementById('game-status');
+            const stateEl = document.getElementById('game-state');
+            const mousePosEl = document.getElementById('mouse-pos');
+            const clickCountEl = document.getElementById('click-count');
+            const keyPressedEl = document.getElementById('key-pressed');
+            
+            try {
+                statusEl.textContent = 'Creating game...';
+                
+                const game = new Game('game-canvas');
+                window.game = game; // For debugging
+                
+                // Add event listeners to track input
+                game.canvas.addEventListener('click', (e) => {
+                    clickCount++;
+                    clickCountEl.textContent = clickCount;
+                    console.log('Canvas clicked!', e);
+                });
+                
+                game.canvas.addEventListener('mousemove', (e) => {
+                    const rect = game.canvas.getBoundingClientRect();
+                    const x = Math.round(e.clientX - rect.left);
+                    const y = Math.round(e.clientY - rect.top);
+                    mousePosEl.textContent = `${x}, ${y}`;
+                });
+                
+                window.addEventListener('keydown', (e) => {
+                    keyPressedEl.textContent = e.key;
+                    console.log('Key pressed:', e.key);
+                });
+                
+                statusEl.textContent = 'Initializing...';
+                await game.init();
+                
+                statusEl.textContent = 'Running';
+                
+                // Update state display
+                setInterval(() => {
+                    if (game.stateManager.currentState) {
+                        stateEl.textContent = game.stateManager.currentState.constructor.name;
+                    }
+                }, 100);
+                
+                // Auto-focus canvas
+                game.canvas.focus();
+                console.log('Game initialized successfully! Current state:', game.stateManager.currentState?.constructor.name);
+                
+            } catch (error) {
+                statusEl.textContent = 'Error: ' + error.message;
+                console.error('Failed to initialize:', error);
+            }
+        }
+        
+        init();
+    </script>
+</body>
+</html>

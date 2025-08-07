@@ -112,20 +112,20 @@ export class Game {
     const cacheBuster = `?v=${Date.now()}`;
     const assets = {
       images: {
-        woodFloor: `/sprites/wood_floor_tiles.jpg${cacheBuster}`,
-        wetcatStand: `/sprites/wetcat_stand.png${cacheBuster}`,
-        wetcatWalk1: `/sprites/wetcat_walk1.png${cacheBuster}`,
-        wetcatWalk2: `/sprites/wetcat_walk2.png${cacheBuster}`,
+        woodFloor: `sprites/wood_floor_tiles.jpg${cacheBuster}`,
+        wetcatStand: `sprites/wetcat_stand.png${cacheBuster}`,
+        wetcatWalk1: `sprites/wetcat_walk1.png${cacheBuster}`,
+        wetcatWalk2: `sprites/wetcat_walk2.png${cacheBuster}`,
         // Coin and wallet sprites
-        coin: `/sprites/coin.png${cacheBuster}`,
-        wallet: `/sprites/wallet.png${cacheBuster}`,
+        coin: `sprites/coin.png${cacheBuster}`,
+        wallet: `sprites/wallet.png${cacheBuster}`,
         // Scammer sprites (using kid sprites for now)
-        scammer1Stand: `/sprites/kid1_stand.png${cacheBuster}`,
-        scammer1Walk: `/sprites/kid1_walk.png${cacheBuster}`,
-        scammer2Stand: `/sprites/kid2_stand.png${cacheBuster}`,
-        scammer2Walk: `/sprites/kid2_walk.png${cacheBuster}`,
-        scammer3Stand: `/sprites/kid3_stand.png${cacheBuster}`,
-        scammer3Walk: `/sprites/kid3_walk.png${cacheBuster}`
+        scammer1Stand: `sprites/kid1_stand.png${cacheBuster}`,
+        scammer1Walk: `sprites/kid1_walk.png${cacheBuster}`,
+        scammer2Stand: `sprites/kid2_stand.png${cacheBuster}`,
+        scammer2Walk: `sprites/kid2_walk.png${cacheBuster}`,
+        scammer3Stand: `sprites/kid3_stand.png${cacheBuster}`,
+        scammer3Walk: `sprites/kid3_walk.png${cacheBuster}`
       }
     };
     await this.assetLoader.loadAll(assets);

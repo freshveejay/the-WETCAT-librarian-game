@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WETCAT Debug Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #1a1a1a;
+            color: #0f0;
+            padding: 20px;
+        }
+        #output {
+            white-space: pre-wrap;
+            background: #000;
+            padding: 10px;
+            border: 1px solid #0f0;
+            margin: 10px 0;
+            height: 400px;
+            overflow-y: auto;
+        }
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #0a0;
+        }
+        #game-canvas {
+            border: 2px solid #0f0;
+            display: block;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 WETCAT Game Debug Console</h1>
+    
+    <div>
+        <button onclick="loadGame()">Load Game</button>
+        <button onclick="checkAssets()">Check Assets</button>
+        <button onclick="testSprites()">Test Sprites</button>
+        <button onclick="startGame()">Force Start Game</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <canvas id="game-canvas" width="800" height="600"></canvas>
+    
+    <div id="output"></div>
+
+    <script type="module">
+        import { Game } from './src/game/Game.js';
+        
+        window.gameInstance = null;
+        window.log = function(msg) {
+            const output = document.getElementById('output');
+            const time = new Date().toLocaleTimeString();
+            output.innerHTML += `[${time}] ${msg}\n`;
+            output.scrollTop = output.scrollHeight;
+        };
+
+        window.loadGame = async function() {
+            try {
+                log('🚀 Starting game initialization...');
+                
+                window.gameInstance = new Game('game-canvas');
+                window.game = window.gameInstance; // For debugging
+                
+                log('📦 Game instance created');
+                
+                await window.gameInstance.init();
+                
+                log('✅ Game initialized successfully!');
+                log(`📍 Current state: ${window.gameInstance.stateManager.currentState?.name}`);
+                
+            } catch (error) {
+                log(`❌ ERROR: ${error.message}`);
+                log(`Stack: ${error.stack}`);
+            }
+        };
+
+        window.checkAssets = function() {
+            if (!window.gameInstance) {
+                log('❌ Game not loaded yet!');
+                return;
+            }
+            
+            const assets = window.gameInstance.assetLoader.assets;
+            log(`📦 Total assets loaded: ${assets.size}`);
+            
+            log('\n🖼️ Images:');
+            assets.forEach((asset, name) => {
+                if (asset instanceof HTMLImageElement) {
+                    log(`  ✓ ${name} (${asset.width}x${asset.height})`);
+                }
+            });
+            
+            log('\n🔊 Audio:');
+            assets.forEach((asset, name) => {
+                if (asset instanceof HTMLAudioElement) {
+                    log(`  ✓ ${name} (${asset.duration ? asset.duration.toFixed(2) + 's' : 'loading...'})`);
+                }
+            });
+        };
+
+        window.testSprites = function() {
+            if (!window.gameInstance) {
+                log('❌ Game not loaded yet!');
+                return;
+            }
+            
+            const canvas = document.getElementById('game-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            log('🎨 Drawing test sprites...');
+            
+            // Clear canvas
+            ctx.fillStyle = '#d4a373';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const assets = window.gameInstance.assetLoader.assets;
+            let x = 10;
+            let y = 10;
+            
+            // Draw each sprite
+            ['wetcat_stand', 'kid1_stand', 'kid2_stand', 'kid3_stand', 'coin', 'wallet'].forEach(name => {
+                const img = assets.get(name);
+                if (img && img.complete) {
+                    ctx.drawImage(img, x, y);
+                    ctx.fillStyle = '#000';
+                    ctx.fillText(name, x, y + img.height + 10);
+                    x += img.width + 20;
+                    if (x > 600) {
+                        x = 10;
+                        y += 100;
+                    }
+                }
+            });
+            
+            log('✅ Sprites drawn to canvas');
+        };
+
+        window.startGame = function() {
+            if (!window.gameInstance) {
+                log('❌ Game not loaded yet!');
+                return;
+            }
+            
+            try {
+                log('🎮 Forcing game start...');
+                window.gameInstance.stateManager.setState('playing');
+                log('✅ Game started!');
+            } catch (error) {
+                log(`❌ Failed to start: ${error.message}`);
+            }
+        };
+
+        window.clearLog = function() {
+            document.getElementById('output').innerHTML = '';
+            log('🧹 Log cleared');
+        };
+
+        // Auto-load on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            log('🌟 Debug console ready!');
+            log('💡 Click "Load Game" to begin');
+        });
+    </script>
+</body>
+</html>

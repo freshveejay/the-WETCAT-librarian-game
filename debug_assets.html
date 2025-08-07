@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Asset Debug</title>
+    <style>
+        body {
+            background: #222;
+            color: #0f0;
+            font-family: monospace;
+            padding: 20px;
+        }
+        #output {
+            background: #000;
+            border: 1px solid #0f0;
+            padding: 10px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        .asset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .asset-item {
+            border: 1px solid #0f0;
+            padding: 10px;
+            text-align: center;
+        }
+        .asset-item img {
+            max-width: 100px;
+            max-height: 100px;
+            display: block;
+            margin: 0 auto 10px;
+        }
+        .error { color: #f00; }
+        .success { color: #0f0; }
+    </style>
+</head>
+<body>
+    <h1>🎮 WETCAT Asset Debugger</h1>
+    
+    <button onclick="checkAssets()">Check All Assets</button>
+    <button onclick="testGame()">Test Game Start</button>
+    <button onclick="checkEntities()">Check Game Entities</button>
+    <button onclick="clearLog()">Clear Log</button>
+    
+    <div id="output"></div>
+    <div id="asset-grid" class="asset-grid"></div>
+    
+    <script type="module">
+        import { Game } from './src/game/Game.js';
+        
+        window.log = function(msg, type = '') {
+            const output = document.getElementById('output');
+            const time = new Date().toLocaleTimeString();
+            const className = type ? ` class="${type}"` : '';
+            output.innerHTML += `<span${className}>[${time}] ${msg}</span>\n`;
+            output.scrollTop = output.scrollHeight;
+        };
+
+        window.checkAssets = async function() {
+            log('🔍 Checking asset paths...');
+            
+            const assetPaths = [
+                'sprites/wetcat_stand.png',
+                'sprites/wetcat_walk1.png',
+                'sprites/wetcat_walk2.png',
+                'sprites/coin.png',
+                'sprites/wallet.png',
+                'sprites/kid1_stand.png',
+                'sprites/kid1_walk.png',
+                'sprites/kid2_stand.png',
+                'sprites/kid2_walk.png',
+                'sprites/kid3_stand.png',
+                'sprites/kid3_walk.png',
+                'sprites/wood_floor_tiles.jpg'
+            ];
+            
+            const grid = document.getElementById('asset-grid');
+            grid.innerHTML = '';
+            
+            for (const path of assetPaths) {
+                const item = document.createElement('div');
+                item.className = 'asset-item';
+                
+                const img = new Image();
+                img.src = path;
+                
+                await new Promise(resolve => {
+                    img.onload = () => {
+                        log(`✅ ${path} - ${img.width}x${img.height}`, 'success');
+                        item.innerHTML = `
+                            <img src="${path}" />
+                            <div>${path.split('/').pop()}</div>
+                            <div>${img.width}x${img.height}</div>
+                        `;
+                        resolve();
+                    };
+                    
+                    img.onerror = () => {
+                        log(`❌ ${path} - FAILED TO LOAD`, 'error');
+                        item.innerHTML = `
+                            <div style="color: #f00;">❌ Failed</div>
+                            <div>${path}</div>
+                        `;
+                        resolve();
+                    };
+                });
+                
+                grid.appendChild(item);
+            }
+        };
+
+        window.testGame = async function() {
+            try {
+                log('🎮 Starting game test...');
+                
+                const canvas = document.createElement('canvas');
+                canvas.id = 'test-canvas';
+                canvas.style.display = 'none';
+                document.body.appendChild(canvas);
+                
+                const game = new Game('test-canvas');
+                window.testGame = game;
+                
+                log('📦 Initializing game...');
+                await game.init();
+                
+                log('✅ Game initialized!', 'success');
+                log(`📍 Current state: ${game.stateManager.currentState?.constructor.name}`);
+                
+                // Force switch to playing state
+                log('🎯 Switching to playing state...');
+                game.stateManager.changeState('playing');
+                
+                // Check loaded assets
+                const assets = game.assetLoader.assets;
+                log(`\n📦 Loaded assets: ${assets.size}`);
+                
+                assets.forEach((asset, name) => {
+                    if (asset instanceof HTMLImageElement) {
+                        log(`  Image: ${name} (${asset.width}x${asset.height})`);
+                    }
+                });
+                
+                document.body.removeChild(canvas);
+                
+            } catch (error) {
+                log(`❌ ERROR: ${error.message}`, 'error');
+                log(error.stack, 'error');
+            }
+        };
+
+        window.checkEntities = function() {
+            if (!window.testGame || !window.testGame.stateManager.currentState) {
+                log('❌ No game running. Run "Test Game Start" first!', 'error');
+                return;
+            }
+            
+            const state = window.testGame.stateManager.currentState;
+            if (state.constructor.name !== 'PlayingState') {
+                log('❌ Not in playing state!', 'error');
+                return;
+            }
+            
+            log('\n🎮 Game Entities:');
+            log(`Player: ${state.player ? '✅' : '❌'}`);
+            log(`Coins: ${state.coins?.length || 0}`);
+            log(`Wallets: ${state.wallets?.length || 0}`);
+            log(`Scammers: ${state.scammers?.length || 0}`);
+            
+            if (state.player) {
+                log(`\nPlayer position: ${Math.round(state.player.x)}, ${Math.round(state.player.y)}`);
+            }
+        };
+
+        window.clearLog = function() {
+            document.getElementById('output').innerHTML = '';
+            document.getElementById('asset-grid').innerHTML = '';
+            log('🧹 Log cleared');
+        };
+        
+        // Auto-run asset check on load
+        window.addEventListener('DOMContentLoaded', () => {
+            log('🌟 Asset debugger ready!');
+            checkAssets();
+        });
+    </script>
+</body>
+</html>
