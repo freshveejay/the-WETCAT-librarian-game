@@ -1,5 +1,8 @@
 import { State } from './State.js';
 import { PlayingState } from './PlayingState.js';
+import { wetcatWeb3 } from '../../web3/WETCATWeb3.js';
+import { worldID } from '../../web3/WorldIDIntegration.js';
+import { worldApp } from '../../web3/WorldAppIntegration.js';
 
 export class MenuState extends State {
   constructor(game) {
@@ -21,6 +24,71 @@ export class MenuState extends State {
 
     // Menu selection sound
     this.selectSound = null;
+
+    // Web3 connection state
+    this.isConnecting = false;
+    this.connectionError = null;
+    this.walletBalance = '0';
+
+    // World App detection
+    this.isWorldApp = worldApp.isWorldApp;
+
+    // Setup Web3 listeners
+    this.setupWeb3Listeners();
+  }
+
+  setupWeb3Listeners() {
+    wetcatWeb3.on('connected', (data) => {
+      this.isConnecting = false;
+      this.connectionError = null;
+      this.updateBalance();
+    });
+
+    wetcatWeb3.on('disconnected', () => {
+      this.walletBalance = '0';
+    });
+
+    wetcatWeb3.on('balanceUpdated', (data) => {
+      this.walletBalance = parseFloat(data.balance).toFixed(2);
+    });
+
+    wetcatWeb3.on('error', (error) => {
+      this.isConnecting = false;
+      this.connectionError = error.message || 'Connection failed';
+    });
+  }
+
+  async updateBalance() {
+    const balance = await wetcatWeb3.updateBalance();
+    if (balance) {
+      this.walletBalance = parseFloat(balance).toFixed(2);
+    }
+  }
+
+  async connectWallet() {
+    if (this.isConnecting) return;
+
+    this.isConnecting = true;
+    this.connectionError = null;
+
+    try {
+      await wetcatWeb3.connect();
+    } catch (error) {
+      this.connectionError = error.message;
+      this.isConnecting = false;
+    }
+  }
+
+  async verifyWithWorldID() {
+    try {
+      await worldID.verifyWithOrb();
+      // Haptic feedback in World App
+      if (this.isWorldApp) {
+        worldApp.triggerHaptic('medium');
+      }
+    } catch (error) {
+      console.error('World ID verification failed:', error);
+    }
   }
 
   enter() {
@@ -110,6 +178,14 @@ export class MenuState extends State {
     const mousePos = input.getMousePosition();
     if (mousePos && !this.showingInstructions) {
       const { width, height } = this.game;
+
+      // Check for Web3 panel clicks first
+      if (input.isMouseButtonPressed(0)) {
+        if (this.handleWeb3Click(mousePos.x, mousePos.y)) {
+          return; // Click was handled by Web3 panel
+        }
+      }
+
       const menuStartY = height * 0.7; // Menu starts at 70% down
 
       // Check each menu item
@@ -216,6 +292,9 @@ export class MenuState extends State {
     ctx.font = '24px Arial';
     ctx.fillStyle = '#4FC3F7';
     ctx.fillText('Get Soaked!', width / 2, height * 0.45);
+
+    // Render Web3 connect panel in top-right
+    this.renderWeb3Panel(ctx, width, height);
 
     // Menu items - positioned in bottom third
     ctx.font = '36px Arial';
@@ -350,5 +429,137 @@ export class MenuState extends State {
       this.selectSound.currentTime = 0;
       this.selectSound.play().catch(e => console.log('Select sound play failed:', e));
     }
+  }
+
+  renderWeb3Panel(ctx, width, height) {
+    const panelWidth = 280;
+    const panelHeight = wetcatWeb3.connectionStatus === 'connected' ? 140 : 90;
+    const panelX = width - panelWidth - 20;
+    const panelY = 20;
+
+    // Panel background
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+    ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
+
+    // Panel border
+    ctx.strokeStyle = '#FFD93D';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(panelX, panelY, panelWidth, panelHeight);
+
+    // World App badge if detected
+    if (this.isWorldApp) {
+      ctx.fillStyle = '#4CAF50';
+      ctx.font = 'bold 10px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText('WORLD APP', panelX + 10, panelY + 15);
+    }
+
+    ctx.fillStyle = '#FFD93D';
+    ctx.font = 'bold 14px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText('$WETCAT Wallet', panelX + 10, panelY + 32);
+
+    if (wetcatWeb3.connectionStatus === 'disconnected') {
+      // Connect wallet button
+      const buttonX = panelX + 10;
+      const buttonY = panelY + 45;
+      const buttonWidth = panelWidth - 20;
+      const buttonHeight = 32;
+
+      ctx.fillStyle = this.isConnecting ? '#888' : '#FFD93D';
+      ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
+
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(
+        this.isConnecting ? 'Connecting...' : (this.isWorldApp ? 'Connect World App' : 'Connect Wallet'),
+        buttonX + buttonWidth / 2,
+        buttonY + 21
+      );
+
+      // Store button bounds for click detection
+      this.connectButtonBounds = { x: buttonX, y: buttonY, width: buttonWidth, height: buttonHeight };
+
+      // Show error if any
+      if (this.connectionError) {
+        ctx.fillStyle = '#ff4444';
+        ctx.font = '11px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(this.connectionError, panelX + panelWidth / 2, panelY + panelHeight - 8);
+      }
+
+    } else if (wetcatWeb3.connectionStatus === 'connected') {
+      // Connected state
+      ctx.fillStyle = '#fff';
+      ctx.font = '11px Arial';
+      ctx.textAlign = 'left';
+
+      const formattedAccount = wetcatWeb3.formatAddress(wetcatWeb3.account);
+      ctx.fillText(`Wallet: ${formattedAccount}`, panelX + 10, panelY + 52);
+
+      // Balance
+      ctx.fillStyle = '#FFD93D';
+      ctx.font = 'bold 18px Arial';
+      ctx.fillText(`${this.walletBalance} $WETCAT`, panelX + 10, panelY + 78);
+
+      // World ID verification status
+      if (worldID.isVerified()) {
+        ctx.fillStyle = '#4CAF50';
+        ctx.font = '12px Arial';
+        const level = worldID.getVerificationLevel();
+        const multiplier = worldID.getRewardMultiplier();
+        ctx.fillText(`Verified (${level}) - ${multiplier}x rewards`, panelX + 10, panelY + 100);
+      } else {
+        // Verify button
+        const verifyButtonX = panelX + 10;
+        const verifyButtonY = panelY + 95;
+        const verifyButtonWidth = panelWidth - 20;
+        const verifyButtonHeight = 28;
+
+        ctx.fillStyle = '#1a1a2e';
+        ctx.fillRect(verifyButtonX, verifyButtonY, verifyButtonWidth, verifyButtonHeight);
+        ctx.strokeStyle = '#4CAF50';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(verifyButtonX, verifyButtonY, verifyButtonWidth, verifyButtonHeight);
+
+        ctx.fillStyle = '#4CAF50';
+        ctx.font = 'bold 11px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Verify with World ID (2x rewards)', verifyButtonX + verifyButtonWidth / 2, verifyButtonY + 18);
+
+        // Store button bounds
+        this.verifyButtonBounds = { x: verifyButtonX, y: verifyButtonY, width: verifyButtonWidth, height: verifyButtonHeight };
+      }
+
+      // On World Chain indicator
+      ctx.fillStyle = '#888';
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'right';
+      ctx.fillText('World Chain', panelX + panelWidth - 10, panelY + panelHeight - 8);
+    }
+  }
+
+  // Check if point is in button bounds
+  isPointInButton(x, y, bounds) {
+    if (!bounds) return false;
+    return x >= bounds.x && x <= bounds.x + bounds.width &&
+           y >= bounds.y && y <= bounds.y + bounds.height;
+  }
+
+  // Handle Web3 panel clicks
+  handleWeb3Click(x, y) {
+    if (wetcatWeb3.connectionStatus === 'disconnected') {
+      if (this.isPointInButton(x, y, this.connectButtonBounds)) {
+        this.connectWallet();
+        return true;
+      }
+    } else if (wetcatWeb3.connectionStatus === 'connected' && !worldID.isVerified()) {
+      if (this.isPointInButton(x, y, this.verifyButtonBounds)) {
+        this.verifyWithWorldID();
+        return true;
+      }
+    }
+    return false;
   }
 }
