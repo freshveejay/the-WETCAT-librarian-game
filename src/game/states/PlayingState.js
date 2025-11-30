@@ -161,14 +161,14 @@ export class PlayingState extends State {
     if (this.pickupSounds.length === 0) {
       // Create 5 audio instances for overlapping pickup sounds
       for (let i = 0; i < 5; i++) {
-        const audio = new Audio('pickup_coin.mp3');
+        const audio = new Audio('pickup_book.mp3');
         audio.volume = 0.7; // Increased from 0.5 for better audibility
         this.pickupSounds.push(audio);
       }
     }
 
     if (!this.shelfSound) {
-      this.shelfSound = new Audio('book_on_wallet.mp3');
+      this.shelfSound = new Audio('book_on_shelf.mp3');
       this.shelfSound.volume = 0.6;
     }
   }
@@ -376,7 +376,7 @@ export class PlayingState extends State {
     // Update tsunami waves
     this.updateTsunamiWaves(deltaTime);
 
-    // Validate book states (debug)
+    // Validate coin states (debug)
     if (Math.random() < 0.01) { // Check 1% of frames to avoid spam
       this.validateCoinStates();
     }
@@ -682,6 +682,115 @@ export class PlayingState extends State {
         ctx.fillText('SPRINTING', panelX + 10, panelY + 130);
       }
     }
+
+    ctx.restore();
+
+    // Render minimap
+    this.renderMinimap(ctx);
+  }
+
+  renderMinimap(ctx) {
+    const { width, height } = this.game;
+
+    // Minimap configuration
+    const mapSize = 150;
+    const mapX = width - mapSize - 10;
+    const mapY = height - mapSize - 10;
+    const scale = mapSize / Math.max(this.worldWidth, this.worldHeight);
+
+    ctx.save();
+
+    // Minimap background
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(mapX - 2, mapY - 2, mapSize + 4, mapSize + 4);
+
+    // Minimap border
+    ctx.strokeStyle = '#FFD93D';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(mapX - 2, mapY - 2, mapSize + 4, mapSize + 4);
+
+    // Draw floor area
+    ctx.fillStyle = '#8B6F47';
+    ctx.fillRect(mapX, mapY, this.worldWidth * scale, this.worldHeight * scale);
+
+    // Draw wallets
+    for (const wallet of this.wallets) {
+      const wx = mapX + wallet.x * scale;
+      const wy = mapY + wallet.y * scale;
+      const wsize = Math.max(4, wallet.width * scale);
+
+      // Color based on fill status
+      const fillPercent = wallet.coins.length / wallet.capacity;
+      if (fillPercent === 1) {
+        ctx.fillStyle = '#00ff00'; // Full - green
+      } else if (fillPercent > 0.5) {
+        ctx.fillStyle = '#ffff00'; // Half - yellow
+      } else if (fillPercent > 0) {
+        ctx.fillStyle = '#ff8800'; // Low - orange
+      } else {
+        ctx.fillStyle = '#ff0000'; // Empty - red
+      }
+      ctx.fillRect(wx, wy, wsize, wsize);
+    }
+
+    // Draw loose coins (not held, not deposited)
+    ctx.fillStyle = '#FFD93D';
+    for (const coin of this.coins) {
+      if (!coin.isHeld && !coin.isDeposited) {
+        const cx = mapX + coin.x * scale;
+        const cy = mapY + coin.y * scale;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Draw scammers
+    ctx.fillStyle = '#ff4444';
+    for (const scammer of this.scammers) {
+      const sx = mapX + scammer.x * scale;
+      const sy = mapY + scammer.y * scale;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Draw player
+    if (this.player) {
+      const px = mapX + this.player.x * scale;
+      const py = mapY + this.player.y * scale;
+
+      ctx.fillStyle = '#4169E1';
+      ctx.beginPath();
+      ctx.arc(px, py, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Player direction indicator
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      const dirX = this.player.facing === 'right' ? 6 : this.player.facing === 'left' ? -6 : 0;
+      const dirY = this.player.facing === 'down' ? 6 : this.player.facing === 'up' ? -6 : 0;
+      ctx.lineTo(px + dirX, py + dirY);
+      ctx.stroke();
+    }
+
+    // Draw boss if present
+    if (this.currentBoss && !this.currentBoss.isDead) {
+      const bx = mapX + this.currentBoss.x * scale;
+      const by = mapY + this.currentBoss.y * scale;
+      ctx.fillStyle = '#ff00ff';
+      ctx.beginPath();
+      ctx.arc(bx, by, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Minimap label
+    ctx.fillStyle = '#fff';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('MAP', mapX + mapSize / 2, mapY - 5);
 
     ctx.restore();
   }
@@ -1037,6 +1146,9 @@ export class PlayingState extends State {
       if (particle.type === 'xp') {
         particle.y += particle.vy * deltaTime;
         particle.vy += 100 * deltaTime; // Gravity
+      } else if (particle.type === 'levelup') {
+        // Expanding ring effect
+        particle.radius = (particle.radius || 0) + 150 * deltaTime;
       }
 
       return particle.age < particle.lifetime;
@@ -1048,8 +1160,9 @@ export class PlayingState extends State {
       ctx.save();
 
       for (const particle of this.particleSystem.particles) {
+        const alpha = 1 - (particle.age / particle.lifetime);
+
         if (particle.type === 'xp') {
-          const alpha = 1 - (particle.age / particle.lifetime);
           ctx.globalAlpha = alpha;
           ctx.font = 'bold 18px Arial';
           ctx.fillStyle = '#ffff00';
@@ -1058,6 +1171,22 @@ export class PlayingState extends State {
           ctx.textAlign = 'center';
           ctx.strokeText(particle.text, particle.x, particle.y);
           ctx.fillText(particle.text, particle.x, particle.y);
+        } else if (particle.type === 'levelup') {
+          // Draw expanding golden ring
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = '#FFD93D';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.arc(particle.x, particle.y, particle.radius || 10, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Inner glow
+          ctx.globalAlpha = alpha * 0.5;
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(particle.x, particle.y, (particle.radius || 10) - 5, 0, Math.PI * 2);
+          ctx.stroke();
         }
       }
 
@@ -1065,9 +1194,9 @@ export class PlayingState extends State {
     });
   }
 
-  validateBookStates() {
+  validateCoinStates() {
     const coinStates = {
-      shelved: 0,
+      deposited: 0,
       held: 0,
       floor: 0,
       invalid: 0
@@ -1075,25 +1204,25 @@ export class PlayingState extends State {
 
     for (const coin of this.coins) {
       if (coin.isDeposited && coin.isHeld) {
-        console.error(`Book ${coin.id} is both shelved and held!`);
+        console.error(`Coin ${coin.id} is both deposited and held!`);
         coinStates.invalid++;
       } else if (coin.isDeposited) {
-        coinStates.shelved++;
-        // Verify book is actually in a shelf
-        let foundInShelf = false;
+        coinStates.deposited++;
+        // Verify coin is actually in a wallet
+        let foundInWallet = false;
         for (const wallet of this.wallets) {
           if (wallet.coins.includes(coin)) {
-            foundInShelf = true;
+            foundInWallet = true;
             break;
           }
         }
-        if (!foundInShelf) {
-          console.error(`Book ${coin.id} marked as shelved but not in any shelf!`);
+        if (!foundInWallet) {
+          console.error(`Coin ${coin.id} marked as deposited but not in any wallet!`);
         }
       } else if (coin.isHeld) {
         coinStates.held++;
         if (!coin.holder) {
-          console.error(`Book ${coin.id} marked as held but has no holder!`);
+          console.error(`Coin ${coin.id} marked as held but has no holder!`);
         }
       } else {
         coinStates.floor++;
@@ -1102,7 +1231,7 @@ export class PlayingState extends State {
 
     // Log summary only if there are issues
     if (coinStates.invalid > 0) {
-      console.log('Book states:', coinStates, 'Total:', this.coins.length);
+      console.log('Coin states:', coinStates, 'Total:', this.coins.length);
     }
   }
 

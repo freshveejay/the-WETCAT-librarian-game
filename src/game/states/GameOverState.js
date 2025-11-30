@@ -74,11 +74,25 @@ export class GameOverState extends State {
     this.stats = {
       timeElapsed: Math.floor(gameData.elapsedTime),
       level: gameData.playerLevel,
-      chaosLevel: Math.floor(gameData.chaosLevel),
-      booksCollected: gameData.booksCollected || 0,
-      booksShelved: gameData.booksShelved || 0,
-      kidsRepelled: gameData.kidsRepelled || 0
+      fudLevel: Math.floor(gameData.fudLevel || 0),
+      coinsCollected: gameData.coinsCollected || 0,
+      coinsDeposited: gameData.coinsDeposited || 0,
+      scammersRepelled: gameData.scammersRepelled || 0
     };
+
+    // Save high score
+    this.highScores = this.game.saveHighScore({
+      time: this.stats.timeElapsed,
+      level: this.stats.level,
+      coinsCollected: this.stats.coinsCollected,
+      coinsDeposited: this.stats.coinsDeposited,
+      won: this.won
+    });
+
+    // Check if this is a new high score
+    this.isNewHighScore = this.highScores.length > 0 &&
+      this.highScores[0].time === this.stats.timeElapsed &&
+      this.highScores[0].level === this.stats.level;
   }
 
   exit() {
@@ -245,16 +259,48 @@ export class GameOverState extends State {
     const statLines = [
       `Time Survived: ${minutes}:${seconds.toString().padStart(2, '0')}`,
       `Final Level: ${this.stats.level}`,
-      `Peak FUD: ${this.stats.chaosLevel}%`,
-      `$WETCAT Collected: ${this.stats.booksCollected}`,
-      `Coins Delivered: ${this.stats.booksShelved}`,
-      `Scammers Splashed: ${this.stats.kidsRepelled}`
+      `Peak FUD: ${this.stats.fudLevel}%`,
+      `$WETCAT Collected: ${this.stats.coinsCollected}`,
+      `Coins Delivered: ${this.stats.coinsDeposited}`,
+      `Scammers Splashed: ${this.stats.scammersRepelled}`
     ];
 
     statLines.forEach(line => {
       ctx.fillText(line, statX, statY);
       statY += 30;
     });
+
+    // New high score banner
+    if (this.isNewHighScore) {
+      ctx.save();
+      ctx.fillStyle = '#FFD93D';
+      ctx.font = 'bold 24px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('NEW HIGH SCORE!', width / 2, boxY + 410);
+      ctx.restore();
+    }
+
+    // High scores section
+    ctx.fillStyle = '#FFD93D';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText('TOP SCORES:', boxX + 400, boxY + 200);
+
+    ctx.font = '14px Arial';
+    ctx.fillStyle = '#fff';
+    const highScores = this.game.getHighScores();
+    for (let i = 0; i < Math.min(5, highScores.length); i++) {
+      const score = highScores[i];
+      const mins = Math.floor(score.time / 60);
+      const secs = score.time % 60;
+      const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
+      const wonStr = score.won ? '(WIN)' : '';
+      ctx.fillText(
+        `${i + 1}. ${timeStr} - Lvl ${score.level} ${wonStr}`,
+        boxX + 400,
+        boxY + 225 + i * 22
+      );
+    }
 
     // Menu items
     ctx.textAlign = 'center';

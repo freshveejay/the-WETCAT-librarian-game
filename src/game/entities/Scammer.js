@@ -287,7 +287,7 @@ export class Scammer extends Entity {
     }
 
     // Get sprite based on variant and animation
-    const spritePrefix = `kid${this.variant}`;
+    const spritePrefix = `scammer${this.variant}`;
     const spriteSuffix = this.isMoving ? 'Walk' : 'Stand';
     const sprite = this.game.assetLoader.getImage(spritePrefix + spriteSuffix);
 

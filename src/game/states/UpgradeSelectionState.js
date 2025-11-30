@@ -227,7 +227,7 @@ export class UpgradeSelectionState extends State {
       upgrade.effect(player, currentLevel + 1);
 
       // Visual feedback
-      playingState.particles.push({
+      playingState.particleSystem.particles.push({
         type: 'levelup',
         x: player.getCenterX(),
         y: player.getCenterY(),

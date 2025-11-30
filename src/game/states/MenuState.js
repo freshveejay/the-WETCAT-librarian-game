@@ -196,12 +196,33 @@ export class MenuState extends State {
 
     ctx.save();
 
+    // Draw game title
+    ctx.fillStyle = '#FFD93D';
+    ctx.font = 'bold 72px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Title shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillText('$WETCAT', width / 2 + 4, height * 0.25 + 4);
+    ctx.fillStyle = '#FFD93D';
+    ctx.fillText('$WETCAT', width / 2, height * 0.25);
+
+    // Subtitle
+    ctx.font = 'bold 36px Arial';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('SURVIVORS', width / 2, height * 0.35);
+
+    ctx.font = '24px Arial';
+    ctx.fillStyle = '#4FC3F7';
+    ctx.fillText('Get Soaked!', width / 2, height * 0.45);
+
     // Menu items - positioned in bottom third
     ctx.font = '36px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    const menuStartY = height * 0.7; // Start at 70% down the screen
+    const menuStartY = height * 0.6; // Start at 60% down the screen
 
     this.menuItems.forEach((item, index) => {
       const y = menuStartY + index * 60;

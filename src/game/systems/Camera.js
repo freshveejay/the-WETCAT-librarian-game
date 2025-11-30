@@ -8,8 +8,22 @@ export class Camera {
     this.offsetX = 0;
     this.offsetY = 0;
 
+    // Viewport dimensions (same as width/height for now)
+    this.viewportWidth = width;
+    this.viewportHeight = height;
+    this.zoom = 1;
+
     // Smooth follow
     this.smoothing = 0.1;
+  }
+
+  // Get viewport position (top-left corner of camera view)
+  getViewportX() {
+    return this.x;
+  }
+
+  getViewportY() {
+    return this.y;
   }
 
   follow(entity) {
@@ -31,6 +45,20 @@ export class Camera {
       x: -this.x + this.offsetX,
       y: -this.y + this.offsetY
     };
+  }
+
+  // Apply camera transform to canvas context
+  applyTransform(ctx) {
+    ctx.save();
+    ctx.translate(-this.x + this.offsetX, -this.y + this.offsetY);
+    if (this.zoom !== 1) {
+      ctx.scale(this.zoom, this.zoom);
+    }
+  }
+
+  // Reset camera transform
+  resetTransform(ctx) {
+    ctx.restore();
   }
 
   setBounds(minX, minY, maxX, maxY) {

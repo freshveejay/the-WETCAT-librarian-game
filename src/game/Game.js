@@ -5,6 +5,8 @@ import { AssetLoader } from './systems/AssetLoader.js';
 import { Camera } from './systems/Camera.js';
 import { Renderer } from './systems/Renderer.js';
 import { GameDebugger } from './debug/GameDebugger.js';
+import { SoundManager } from './systems/SoundManager.js';
+import { ScreenShake } from './systems/ScreenShake.js';
 
 export class Game {
   constructor(canvasId) {
@@ -33,6 +35,11 @@ export class Game {
     this.assetLoader = new AssetLoader();
     this.camera = new Camera(this.width, this.height);
     this.renderer = new Renderer(this.ctx, this.camera);
+    this.soundManager = new SoundManager();
+    this.screenShake = new ScreenShake(this.camera);
+
+    // High scores
+    this.highScores = this.loadHighScores();
 
     // Debug info
     this.debug = {
@@ -46,8 +53,8 @@ export class Game {
 
     // Game-specific data
     this.gameData = {
-      chaosLevel: 0,
-      maxChaos: 100,
+      fudLevel: 0,
+      maxFud: 100,
       playerLevel: 1,
       xp: 0,
       xpToNext: 100,
@@ -55,10 +62,49 @@ export class Game {
       targetTime: 30 * 60, // 30 minutes in seconds
       isPaused: false,
       // Stats tracking
-      booksCollected: 0,
-      booksShelved: 0,
-      kidsRepelled: 0
+      coinsCollected: 0,
+      coinsDeposited: 0,
+      scammersRepelled: 0
     };
+  }
+
+  // High score methods
+  loadHighScores() {
+    try {
+      const saved = localStorage.getItem('wetcat_highscores');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.log('Failed to load high scores:', e);
+      return [];
+    }
+  }
+
+  saveHighScore(score) {
+    const newScore = {
+      time: score.time,
+      level: score.level,
+      coinsCollected: score.coinsCollected,
+      coinsDeposited: score.coinsDeposited,
+      won: score.won,
+      date: new Date().toISOString()
+    };
+
+    this.highScores.push(newScore);
+    // Sort by time survived (descending) and keep top 10
+    this.highScores.sort((a, b) => b.time - a.time);
+    this.highScores = this.highScores.slice(0, 10);
+
+    try {
+      localStorage.setItem('wetcat_highscores', JSON.stringify(this.highScores));
+    } catch (e) {
+      console.log('Failed to save high scores:', e);
+    }
+
+    return this.highScores;
+  }
+
+  getHighScores() {
+    return this.highScores;
   }
 
   setupCanvas() {
@@ -137,6 +183,9 @@ export class Game {
 
     // Update camera
     this.camera.update(deltaTime);
+
+    // Update screen shake
+    this.screenShake.update(deltaTime);
 
     // Update input AFTER game logic has processed events
     this.inputManager.update();

@@ -60,6 +60,11 @@ export class Entity {
     return Math.sqrt(dx * dx + dy * dy);
   }
 
+  // Alias for distanceTo (for compatibility)
+  getDistanceTo(other) {
+    return this.distanceTo(other);
+  }
+
   // Check collision with another entity
   collidesWith(other) {
     if (!this.solid || !other.solid) return false;
