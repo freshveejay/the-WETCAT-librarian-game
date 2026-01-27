@@ -5,20 +5,19 @@ Requires: LEONARDO_API_KEY environment variable
 """
 
 import requests
-import json
 import time
 import os
-from datetime import datetime
 
 # Leonardo AI API configuration
-API_KEY = os.environ.get('LEONARDO_API_KEY', '')
+API_KEY = os.environ.get("LEONARDO_API_KEY", "")
 BASE_URL = "https://cloud.leonardo.ai/api/rest/v1"
 
 headers = {
     "accept": "application/json",
     "authorization": f"Bearer {API_KEY}",
-    "content-type": "application/json"
+    "content-type": "application/json",
 }
+
 
 def check_api_key():
     """Check if API key is set"""
@@ -31,15 +30,18 @@ def check_api_key():
         return False
     return True
 
-def generate_image(prompt, width=512, height=512, num_images=1, model_id=None, preset_style="LEONARDO"):
+
+def generate_image(
+    prompt, width=512, height=512, num_images=1, model_id=None, preset_style="LEONARDO"
+):
     """Generate an image using Leonardo AI"""
-    
+
     generation_url = f"{BASE_URL}/generations"
-    
+
     # Use Leonardo Diffusion XL for high quality
     if not model_id:
         model_id = "1e60896f-3c26-4296-8ecc-53e2afecc132"  # Leonardo Diffusion XL
-    
+
     payload = {
         "prompt": prompt,
         "negative_prompt": "blurry, low quality, text, watermark, signature",
@@ -54,43 +56,44 @@ def generate_image(prompt, width=512, height=512, num_images=1, model_id=None, p
         "num_inference_steps": 30,
         "promptMagic": True,
         "controlNet": False,
-        "highResolution": True
+        "highResolution": True,
     }
-    
+
     print(f"🎨 Generating: {prompt[:60]}...")
     response = requests.post(generation_url, json=payload, headers=headers)
-    
+
     if response.status_code != 200:
         print(f"❌ Error creating generation: {response.status_code} - {response.text}")
         return None
-        
+
     generation_data = response.json()
-    generation_id = generation_data['sdGenerationJob']['generationId']
-    
+    generation_id = generation_data["sdGenerationJob"]["generationId"]
+
     print(f"⏳ Generation ID: {generation_id}")
-    
+
     # Poll for completion
     while True:
         check_url = f"{BASE_URL}/generations/{generation_id}"
         response = requests.get(check_url, headers=headers)
-        
+
         if response.status_code != 200:
             print(f"❌ Error checking generation: {response.text}")
             return None
-            
+
         data = response.json()
-        status = data['generations_by_pk']['status']
-        
-        if status == 'COMPLETE':
-            images = data['generations_by_pk']['generated_images']
-            print(f"✅ Generation complete!")
-            return images[0]['url'] if images else None
-        elif status == 'FAILED':
+        status = data["generations_by_pk"]["status"]
+
+        if status == "COMPLETE":
+            images = data["generations_by_pk"]["generated_images"]
+            print("✅ Generation complete!")
+            return images[0]["url"] if images else None
+        elif status == "FAILED":
             print("❌ Generation failed")
             return None
-            
+
         print(f"⏳ Status: {status}...")
         time.sleep(2)
+
 
 def download_image(url, filename):
     """Download image from URL"""
@@ -98,7 +101,7 @@ def download_image(url, filename):
         response = requests.get(url)
         if response.status_code == 200:
             os.makedirs(os.path.dirname(filename), exist_ok=True)
-            with open(filename, 'wb') as f:
+            with open(filename, "wb") as f:
                 f.write(response.content)
             print(f"✅ Downloaded: {filename}")
             return True
@@ -106,14 +109,15 @@ def download_image(url, filename):
         print(f"❌ Download failed: {e}")
     return False
 
+
 # Main execution
 if __name__ == "__main__":
     if not check_api_key():
         exit(1)
-    
+
     print("\n🚀 WETCAT SURVIVORS - Leonardo AI Asset Generator")
     print("=" * 50)
-    
+
     # Define assets to generate
     assets = [
         # WETCAT Character Sprites
@@ -123,7 +127,7 @@ if __name__ == "__main__":
             "prompt": "pixel art sprite of a cute wet cat mascot character, anthropomorphic, wearing a purple hoodie with dollar sign, standing pose, facing left, transparent background, 16-bit retro game style, clean pixel art, no anti-aliasing",
             "width": 512,
             "height": 512,
-            "style": "PIXEL_ART"
+            "style": "PIXEL_ART",
         },
         {
             "name": "wetcat_walk1",
@@ -131,7 +135,7 @@ if __name__ == "__main__":
             "prompt": "pixel art sprite of a cute wet cat mascot character, anthropomorphic, wearing a purple hoodie with dollar sign, walking pose with left foot forward, facing left, transparent background, 16-bit retro game style, clean pixel art, no anti-aliasing",
             "width": 512,
             "height": 512,
-            "style": "PIXEL_ART"
+            "style": "PIXEL_ART",
         },
         {
             "name": "wetcat_walk2",
@@ -139,9 +143,8 @@ if __name__ == "__main__":
             "prompt": "pixel art sprite of a cute wet cat mascot character, anthropomorphic, wearing a purple hoodie with dollar sign, walking pose with right foot forward, facing left, transparent background, 16-bit retro game style, clean pixel art, no anti-aliasing",
             "width": 512,
             "height": 512,
-            "style": "PIXEL_ART"
+            "style": "PIXEL_ART",
         },
-        
         # Menu Background
         {
             "name": "menu_background",
@@ -149,9 +152,8 @@ if __name__ == "__main__":
             "prompt": "epic crypto trading floor with anthropomorphic wet cats as traders, multiple monitors showing crypto charts and meme coins, purple and gold neon lighting, rain effect with dollar bills falling, cyberpunk aesthetic, dramatic wide angle shot, highly detailed digital art",
             "width": 1280,
             "height": 720,
-            "style": "DYNAMIC"
+            "style": "DYNAMIC",
         },
-        
         # Crypto Coin Sprite
         {
             "name": "crypto_coin",
@@ -159,9 +161,8 @@ if __name__ == "__main__":
             "prompt": "pixel art golden coin with dollar sign, spinning animation frame, glowing effect, transparent background, 16-bit retro game style, clean pixel art",
             "width": 512,
             "height": 512,
-            "style": "PIXEL_ART"
+            "style": "PIXEL_ART",
         },
-        
         # Crypto Wallet Sprite
         {
             "name": "crypto_wallet",
@@ -169,9 +170,8 @@ if __name__ == "__main__":
             "prompt": "pixel art crypto wallet terminal, futuristic ATM design, purple and gold colors, glowing screen, 16-bit retro game style, isometric view",
             "width": 512,
             "height": 640,
-            "style": "PIXEL_ART"
+            "style": "PIXEL_ART",
         },
-        
         # Game Logo
         {
             "name": "game_logo",
@@ -179,50 +179,50 @@ if __name__ == "__main__":
             "prompt": "$WETCAT SURVIVORS logo, wet dripping text effect, purple and gold gradient, dollar signs, epic game logo style, transparent background, highly detailed",
             "width": 1024,
             "height": 512,
-            "style": "DYNAMIC"
-        }
+            "style": "DYNAMIC",
+        },
     ]
-    
+
     print(f"\n📋 Generating {len(assets)} assets...")
-    
+
     successful = 0
     failed = 0
-    
+
     for i, asset in enumerate(assets, 1):
         print(f"\n[{i}/{len(assets)}] {asset['name']}")
         print("-" * 40)
-        
+
         # Generate image
         image_url = generate_image(
-            prompt=asset['prompt'],
-            width=asset['width'],
-            height=asset['height'],
-            preset_style=asset.get('style', 'LEONARDO')
+            prompt=asset["prompt"],
+            width=asset["width"],
+            height=asset["height"],
+            preset_style=asset.get("style", "LEONARDO"),
         )
-        
+
         if image_url:
             # Download image
-            if download_image(image_url, asset['path']):
+            if download_image(image_url, asset["path"]):
                 successful += 1
             else:
                 failed += 1
         else:
             failed += 1
-        
+
         # Rate limiting
         if i < len(assets):
             print("\n⏳ Waiting 3 seconds before next generation...")
             time.sleep(3)
-    
+
     # Summary
     print("\n" + "=" * 50)
     print("🎉 GENERATION COMPLETE!")
     print(f"✅ Successful: {successful}")
     print(f"❌ Failed: {failed}")
-    
+
     if successful > 0:
         print("\n📁 Assets have been saved to their respective directories.")
         print("\n🎮 The game should now display the new WETCAT graphics!")
         print("\n💡 TIP: Clear your browser cache if you don't see the new assets.")
-    
+
     print("\n🚀 To the moon with $WETCAT!")

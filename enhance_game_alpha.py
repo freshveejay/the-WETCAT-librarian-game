@@ -5,14 +5,13 @@ Adds all the polish and fixes to make the game amazing
 """
 
 import os
-import shutil
 import json
 
 print("🚀 WETCAT ALPHA MODE - Game Enhancement")
 print("=" * 50)
 
 # Fix 1: Update Camera system to support offset
-camera_update = '''export class Camera {
+camera_update = """export class Camera {
   constructor(width, height) {
     this.width = width;
     this.height = height;
@@ -51,42 +50,28 @@ camera_update = '''export class Camera {
     this.x = Math.max(minX, Math.min(maxX - this.width, this.x));
     this.y = Math.max(minY, Math.min(maxY - this.height, this.y));
   }
-}'''
+}"""
 
 # Write camera update
-with open('src/game/systems/Camera.js', 'w') as f:
+with open("src/game/systems/Camera.js", "w") as f:
     f.write(camera_update)
 print("✅ Enhanced Camera system")
 
 # Fix 2: Add game configuration
 game_config = {
-    "particles": {
-        "enabled": True,
-        "maxParticles": 500
-    },
-    "effects": {
-        "screenShake": True,
-        "glowEffects": True,
-        "trailEffects": True
-    },
-    "audio": {
-        "masterVolume": 0.7,
-        "sfxVolume": 0.8,
-        "musicVolume": 0.6
-    },
-    "graphics": {
-        "pixelPerfect": True,
-        "antialiasing": False
-    }
+    "particles": {"enabled": True, "maxParticles": 500},
+    "effects": {"screenShake": True, "glowEffects": True, "trailEffects": True},
+    "audio": {"masterVolume": 0.7, "sfxVolume": 0.8, "musicVolume": 0.6},
+    "graphics": {"pixelPerfect": True, "antialiasing": False},
 }
 
-with open('src/game/config/game.config.json', 'w') as f:
+with open("src/game/config/game.config.json", "w") as f:
     json.dump(game_config, f, indent=2)
-os.makedirs('src/game/config', exist_ok=True)
+os.makedirs("src/game/config", exist_ok=True)
 print("✅ Added game configuration")
 
 # Fix 3: Create a proper sound manager
-sound_manager = '''export class SoundManager {
+sound_manager = """export class SoundManager {
   constructor() {
     this.sounds = new Map();
     this.musicTracks = new Map();
@@ -147,14 +132,14 @@ sound_manager = '''export class SoundManager {
   }
 }
 
-export const soundManager = new SoundManager();'''
+export const soundManager = new SoundManager();"""
 
-with open('src/game/systems/SoundManager.js', 'w') as f:
+with open("src/game/systems/SoundManager.js", "w") as f:
     f.write(sound_manager)
 print("✅ Created SoundManager")
 
 # Fix 4: Create visual effects helper
-effects_helper = '''export class VisualEffects {
+effects_helper = """export class VisualEffects {
   static createCoinTrail(ctx, x, y, facing, intensity = 1) {
     ctx.save();
     ctx.globalAlpha = 0.3 * intensity;
@@ -205,14 +190,14 @@ effects_helper = '''export class VisualEffects {
     ctx.fillText(text, x, y);
     ctx.restore();
   }
-}'''
+}"""
 
-with open('src/game/effects/VisualEffects.js', 'w') as f:
+with open("src/game/effects/VisualEffects.js", "w") as f:
     f.write(effects_helper)
 print("✅ Created VisualEffects helper")
 
 # Fix 5: Create a splash screen
-splash_screen = '''export class SplashScreen {
+splash_screen = """export class SplashScreen {
   constructor(game) {
     this.game = game;
     this.duration = 3;
@@ -281,11 +266,11 @@ splash_screen = '''export class SplashScreen {
     ctx.fillStyle = '#FFD93D';
     ctx.fillRect(barX, barY, barWidth * (this.timer / this.duration), barHeight);
   }
-}'''
+}"""
 
-with open('src/game/screens/SplashScreen.js', 'w') as f:
+with open("src/game/screens/SplashScreen.js", "w") as f:
     f.write(splash_screen)
-os.makedirs('src/game/screens', exist_ok=True)
+os.makedirs("src/game/screens", exist_ok=True)
 print("✅ Created SplashScreen")
 
 print("\n✨ ALPHA ENHANCEMENTS COMPLETE!")

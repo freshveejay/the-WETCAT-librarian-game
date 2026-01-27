@@ -7,7 +7,7 @@ sprites_to_resize = [
     ("src/assets/sprites/wetcat_walk1.png", 64, 80),
     ("src/assets/sprites/wetcat_walk2.png", 64, 80),
     ("src/assets/sprites/coin.png", 32, 32),
-    ("src/assets/sprites/wallet.png", 96, 120)
+    ("src/assets/sprites/wallet.png", 96, 120),
 ]
 
 for filepath, new_width, new_height in sprites_to_resize:
