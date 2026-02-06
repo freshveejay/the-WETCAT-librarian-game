@@ -87,9 +87,12 @@ export class PlayingState extends State {
     
     // Attack telegraphs
     this.telegraphs = [];
-    
+
     // Tsunami waves (for WhaleManipulator)
     this.tsunamiWaves = [];
+
+    // On-screen notifications
+    this.notifications = [];
   }
 
   enter() {
@@ -376,6 +379,9 @@ export class PlayingState extends State {
     // Update tsunami waves
     this.updateTsunamiWaves(deltaTime);
 
+    // Update notifications
+    this.updateNotifications(deltaTime);
+
     // Validate coin states (debug)
     if (Math.random() < 0.01) { // Check 1% of frames to avoid spam
       this.validateCoinStates();
@@ -515,9 +521,12 @@ export class PlayingState extends State {
     
     // Render boss UI
     this.renderBossUI(ctx);
-    
+
     // Render boss warning
     this.renderBossWarning(ctx);
+
+    // Render notifications
+    this.renderNotifications(ctx);
 
     // Top Center - Chaos meter
     const meterWidth = 300;
@@ -1299,6 +1308,26 @@ export class PlayingState extends State {
     }
   }
 
+  spawnScammer(x, y) {
+    const minutes = this.game.gameData.elapsedTime / 60;
+    const aggressionLevel = minutes >= 10 ? 3 : minutes >= 5 ? 2 : 1;
+    const scammer = new Scammer(this.game, x, y, {
+      aggression: aggressionLevel,
+      variant: Math.floor(Math.random() * 3) + 1
+    });
+    this.scammers.push(scammer);
+    return scammer;
+  }
+
+  spawnCoin(x, y) {
+    // Spawn a random color coin
+    const colors = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const coin = new Coin(this.game, x, y, color);
+    this.coins.push(coin);
+    return coin;
+  }
+
   isInViewport(entity, viewX, viewY, viewWidth, viewHeight) {
     return !(entity.x + entity.width < viewX ||
              entity.x > viewX + viewWidth ||
@@ -1379,15 +1408,25 @@ export class PlayingState extends State {
         const justFired = weapon.currentCooldown > weapon.cooldown - 0.2 && weapon.currentCooldown > 0;
         if (!justFired) return;
 
-        // Check if weapon hit the boss
         if (weapon.id === 'diamond_slap' && distance < weapon.range + 30) {
           this.currentBoss.takeDamage(50);
           this.game.screenShake?.shake(8, 0.4);
         } else if (weapon.id === 'fud_blast' && distance < 200) {
           this.currentBoss.takeDamage(30);
           this.game.screenShake?.shake(6, 0.3);
+        } else if (weapon.id === 'moon_beam' && distance < 300) {
+          // Moon beam does high damage at range
+          this.currentBoss.takeDamage(80);
+          this.game.screenShake?.shake(10, 0.5);
         }
       });
+
+      // HODL Shield contact damage - reflects damage when boss is nearby
+      if (this.player.buffs?.hodlShield && distance < 100) {
+        // Constant reflect DPS while shield is active and boss is close
+        const reflectDamage = 40 * deltaTime;
+        this.currentBoss.takeDamage(reflectDamage);
+      }
     }
 
     // Remove dead boss
@@ -1584,7 +1623,55 @@ export class PlayingState extends State {
   }
   
   showNotification(text, duration = 2) {
-    // This would be implemented with a notification system
-    console.log(`[NOTIFICATION] ${text}`);
+    this.notifications.push({
+      text,
+      duration,
+      maxDuration: duration,
+      y: this.game.height * 0.35
+    });
+  }
+
+  updateNotifications(deltaTime) {
+    this.notifications = this.notifications.filter(n => {
+      n.duration -= deltaTime;
+      return n.duration > 0;
+    });
+  }
+
+  renderNotifications(ctx) {
+    if (this.notifications.length === 0) return;
+
+    ctx.save();
+    this.notifications.forEach((notification, index) => {
+      const progress = notification.duration / notification.maxDuration;
+
+      // Fade in for first 15%, solid middle, fade out last 15%
+      let alpha;
+      if (progress > 0.85) {
+        alpha = (1 - progress) / 0.15;
+      } else if (progress < 0.15) {
+        alpha = progress / 0.15;
+      } else {
+        alpha = 1;
+      }
+
+      ctx.globalAlpha = alpha;
+
+      const y = notification.y - index * 50;
+      const x = this.game.width / 2;
+
+      // Text shadow / outline
+      ctx.font = 'bold 36px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 4;
+      ctx.strokeText(notification.text, x, y);
+
+      // Main text
+      ctx.fillStyle = '#FFD93D';
+      ctx.fillText(notification.text, x, y);
+    });
+    ctx.restore();
   }
 }

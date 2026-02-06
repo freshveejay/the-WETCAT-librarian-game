@@ -110,7 +110,7 @@ export class WhaleManipulator extends Boss {
     }
     
     // Schedule dump
-    setTimeout(() => {
+    this.scheduleTimeout(() => {
       this.executeDump();
     }, 2000);
   }
@@ -156,7 +156,7 @@ export class WhaleManipulator extends Boss {
       this.game.camera.shake(20, 0.7);
     }
     
-    setTimeout(() => {
+    this.scheduleTimeout(() => {
       this.marketState = 'neutral';
     }, 1000);
   }
@@ -176,7 +176,7 @@ export class WhaleManipulator extends Boss {
       this.createTelegraph(targetX, targetY, 100, 1);
       
       // Create tornado after delay
-      setTimeout(() => {
+      this.scheduleTimeout(() => {
         this.coinTornadoes.push({
           x: targetX,
           y: targetY,
@@ -244,7 +244,7 @@ export class WhaleManipulator extends Boss {
     this.state = 'moving';
     
     // Schedule tsunami
-    setTimeout(() => {
+    this.scheduleTimeout(() => {
       this.executeTsunami();
     }, 2000);
   }

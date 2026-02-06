@@ -37,10 +37,13 @@ export class Boss extends Entity {
       width: width * 0.8,
       height: height * 0.8
     };
-    
+
     // Invulnerability
     this.invulnerable = false;
     this.invulnerableTimer = 0;
+
+    // Track pending timeouts for cleanup on death
+    this.pendingTimeouts = [];
   }
   
   update(deltaTime) {
@@ -159,6 +162,7 @@ export class Boss extends Entity {
       this.health = 0;
       this.state = 'dying';
       this.stateTimer = 2;
+      this.clearAllTimeouts();
       this.onDefeat();
     }
   }
@@ -211,12 +215,33 @@ export class Boss extends Entity {
     ctx.strokeRect(barX, barY, barWidth, barHeight);
   }
   
+  // Schedule a timeout that will be auto-cleared on death
+  scheduleTimeout(fn, delay) {
+    const id = setTimeout(() => {
+      // Remove from tracking after execution
+      this.pendingTimeouts = this.pendingTimeouts.filter(t => t !== id);
+      if (!this.isDead && this.state !== 'dying') {
+        fn();
+      }
+    }, delay);
+    this.pendingTimeouts.push(id);
+    return id;
+  }
+
+  // Clear all pending timeouts (called on death)
+  clearAllTimeouts() {
+    this.pendingTimeouts.forEach(id => clearTimeout(id));
+    this.pendingTimeouts = [];
+  }
+
   // Override these in subclasses
   onSpawnComplete() {}
   onMoveComplete() {}
   onPhaseChange(phase) {}
   onDefeat() {}
-  onDeath() {}
+  onDeath() {
+    this.clearAllTimeouts();
+  }
   
   getDistanceTo(entity) {
     const dx = this.getCenterX() - entity.getCenterX();

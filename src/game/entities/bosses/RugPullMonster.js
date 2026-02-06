@@ -151,17 +151,17 @@ export class RugPullMonster extends Boss {
     // Extend tentacles
     this.tentacles.forEach((tentacle, i) => {
       tentacle.targetLength = 150;
-      
+
       // Telegraph slam area
-      setTimeout(() => {
+      this.scheduleTimeout(() => {
         const slamX = this.getCenterX() + Math.cos(tentacle.angle) * 120;
         const slamY = this.getCenterY() + Math.sin(tentacle.angle) * 120;
         this.createTelegraph(slamX, slamY, 60, 0.5);
       }, i * 200);
     });
-    
+
     // Execute slam
-    setTimeout(() => {
+    this.scheduleTimeout(() => {
       this.executeTentacleSlam();
     }, 1000);
   }
@@ -229,7 +229,7 @@ export class RugPullMonster extends Boss {
     
     // Create expanding rug telegraph
     for (let i = 0; i < 3; i++) {
-      setTimeout(() => {
+      this.scheduleTimeout(() => {
         this.createRectTelegraph(
           this.game.camera.x,
           this.game.camera.y + this.game.camera.height - 100,
@@ -239,9 +239,9 @@ export class RugPullMonster extends Boss {
         );
       }, i * 300);
     }
-    
+
     // Execute rug pull
-    setTimeout(() => {
+    this.scheduleTimeout(() => {
       this.executeRugPull();
     }, 1500);
   }
@@ -262,14 +262,7 @@ export class RugPullMonster extends Boss {
     }
     
     // Drop all stolen coins
-    this.stolenCoins.forEach(coin => {
-      coin.isHeld = false;
-      coin.x = this.getCenterX() + (Math.random() - 0.5) * 100;
-      coin.y = this.getCenterY() + (Math.random() - 0.5) * 100;
-      coin.vx = (Math.random() - 0.5) * 200;
-      coin.vy = -Math.random() * 200;
-    });
-    this.stolenCoins = [];
+    this.releaseStoredCoins();
     
     // Rug wave effect
     for (let x = 0; x < this.game.camera.width; x += 20) {
@@ -389,15 +382,10 @@ export class RugPullMonster extends Boss {
   
   onDefeat() {
     const state = this.game.stateManager.currentState;
-    
-    // Drop all stolen coins
-    this.stolenCoins.forEach(coin => {
-      coin.isHeld = false;
-      coin.x = this.getCenterX() + (Math.random() - 0.5) * 200;
-      coin.y = this.getCenterY() + (Math.random() - 0.5) * 200;
-      coin.vx = (Math.random() - 0.5) * 300;
-      coin.vy = -Math.random() * 300;
-    });
+
+    // Release all stolen coins
+    this.isVacuuming = false;
+    this.releaseStoredCoins();
     
     // Big explosion
     for (let i = 0; i < 60; i++) {
@@ -427,9 +415,23 @@ export class RugPullMonster extends Boss {
   
   updateAttacking(deltaTime) {
     super.updateAttacking(deltaTime);
-    
+
     if (this.currentAttack === 'vacuum' && this.stateTimer <= 0) {
       this.isVacuuming = false;
+      // Release stolen coins when vacuum ends
+      this.releaseStoredCoins();
     }
+  }
+
+  releaseStoredCoins() {
+    this.stolenCoins.forEach(coin => {
+      coin.isHeld = false;
+      coin.holder = null;
+      coin.x = this.getCenterX() + (Math.random() - 0.5) * 150;
+      coin.y = this.getCenterY() + (Math.random() - 0.5) * 150;
+      coin.vx = (Math.random() - 0.5) * 200;
+      coin.vy = -Math.random() * 200;
+    });
+    this.stolenCoins = [];
   }
 }

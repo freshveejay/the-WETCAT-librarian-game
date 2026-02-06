@@ -154,15 +154,15 @@ export class FUDDragon extends Boss {
     this.glowIntensity = 2;
     
     // Spawn scammers after delay
-    setTimeout(() => {
+    this.scheduleTimeout(() => {
       const state = this.game.stateManager.currentState;
-      if (state && state.scammers && state.spawnScammer) {
+      if (state && state.spawnScammer) {
         // Spawn 3 scammers around the boss
         for (let i = 0; i < 3; i++) {
           const angle = (Math.PI * 2 / 3) * i;
           const spawnX = this.getCenterX() + Math.cos(angle) * 100;
           const spawnY = this.getCenterY() + Math.sin(angle) * 100;
-          
+
           state.spawnScammer(spawnX, spawnY);
         }
       }
@@ -176,7 +176,7 @@ export class FUDDragon extends Boss {
     
     // Create expanding wave telegraph
     for (let i = 0; i < 5; i++) {
-      setTimeout(() => {
+      this.scheduleTimeout(() => {
         this.createTelegraph(
           this.getCenterX(),
           this.getCenterY(),
@@ -185,9 +185,9 @@ export class FUDDragon extends Boss {
         );
       }, i * 200);
     }
-    
+
     // Execute wave after delay
-    setTimeout(() => {
+    this.scheduleTimeout(() => {
       this.executeFudWave();
     }, 1500);
   }
