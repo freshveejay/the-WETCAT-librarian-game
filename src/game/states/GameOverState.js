@@ -77,7 +77,8 @@ export class GameOverState extends State {
       fudLevel: Math.floor(gameData.fudLevel || 0),
       coinsCollected: gameData.coinsCollected || 0,
       coinsDeposited: gameData.coinsDeposited || 0,
-      scammersRepelled: gameData.scammersRepelled || 0
+      scammersRepelled: gameData.scammersRepelled || 0,
+      wetcatEarned: (gameData.coinsDeposited || 0) * 10 + (gameData.scammersRepelled || 0) * 5 + Math.floor((gameData.elapsedTime || 0) / 60) * 2
     };
 
     // Save high score
@@ -238,11 +239,11 @@ export class GameOverState extends State {
     ctx.fillStyle = '#FFD93D';
     ctx.font = '24px Arial';
     if (this.won) {
-      ctx.fillText('You survived 30 minutes of crypto chaos! $WETCAT TO THE MOON!', width / 2, boxY + 130);
+      ctx.fillText(`MOON MISSION COMPLETE! You earned ${this.stats.wetcatEarned} $WETCAT!`, width / 2, boxY + 130);
     } else {
-      let message = 'The FUD got too strong...';
-      if (this.reason === 'chaos') {
-        message = 'You got REKT by the FUD!';
+      let message = `You got REKT! Earned ${this.stats.wetcatEarned} $WETCAT before the crash.`;
+      if (this.reason !== 'chaos') {
+        message = `The FUD got too strong... Earned ${this.stats.wetcatEarned} $WETCAT.`;
       }
       ctx.fillText(message, width / 2, boxY + 130);
     }
@@ -262,7 +263,8 @@ export class GameOverState extends State {
       `Peak FUD: ${this.stats.fudLevel}%`,
       `$WETCAT Collected: ${this.stats.coinsCollected}`,
       `Coins Delivered: ${this.stats.coinsDeposited}`,
-      `Scammers Splashed: ${this.stats.scammersRepelled}`
+      `Scammers Splashed: ${this.stats.scammersRepelled}`,
+      `$WETCAT Earned: ${this.stats.wetcatEarned}`
     ];
 
     statLines.forEach(line => {

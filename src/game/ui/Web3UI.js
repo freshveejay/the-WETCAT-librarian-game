@@ -15,7 +15,7 @@ export class Web3UI {
 
     // UI positioning
     this.panelX = 10;
-    this.panelY = 170; // Below player stats
+    this.panelY = 195; // Below player stats
     this.panelWidth = 250;
     this.panelHeight = 100;
     

@@ -82,6 +82,11 @@ export class Scammer extends Entity {
           this.dropAllCoins();
           this.playScammerSound();
           this.showMessage('REKT!');
+
+          // Track scammer repel stat
+          if (this.game.gameData) {
+            this.game.gameData.scammersRepelled = (this.game.gameData.scammersRepelled || 0) + 1;
+          }
         }
       }
     }

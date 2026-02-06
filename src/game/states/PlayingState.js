@@ -15,7 +15,6 @@ export class PlayingState extends State {
     super(game);
     console.log('🚀 PlayingState constructor called!');
     this.instanceId = Math.random().toString(36).substring(7); // Unique ID for debugging
-    console.log(`[RESTART DEBUG] Creating new PlayingState instance: ${this.instanceId}`);
     this.player = null;
     this.scammers = []; // Scammers
     this.coins = []; // Coins
@@ -95,8 +94,6 @@ export class PlayingState extends State {
 
   enter() {
     console.log('🎮 WETCAT PLAYING STATE ENTERED!');
-    console.log(`[RESTART DEBUG] PlayingState.enter() called for instance: ${this.instanceId}`);
-    console.log(`[RESTART DEBUG] scammers.length before clearing: ${this.scammers.length}`);
 
     // Clear any existing entities first to prevent accumulation
     this.scammers = [];
@@ -134,8 +131,6 @@ export class PlayingState extends State {
       duration: 3
     };
 
-    console.log(`[SCAMMER SPAWNING] World dimensions: ${this.worldWidth}x${this.worldHeight}`);
-    console.log('[SCAMMER SPAWNING] Spawn points:', this.spawnPoints);
 
     // Initialize game world
     this.initializeLevel();
@@ -230,14 +225,11 @@ export class PlayingState extends State {
 
     // Spawn initial kids
     const initialScammers = 2; // Start with 2 kids
-    console.log(`[RESTART DEBUG] Before spawning: scammers.length = ${this.scammers.length}`);
     for (let i = 0; i < initialScammers; i++) {
       const spawnPoint = this.spawnPoints[Math.floor(Math.random() * this.spawnPoints.length)];
       const scammer = new Scammer(this.game, spawnPoint.x, spawnPoint.y, { aggression: 1, variant: 1 }); // Easy scammer
       this.scammers.push(scammer);
     }
-    console.log(`[RESTART DEBUG] After spawning: scammers.length = ${this.scammers.length}`);
-    console.log(`[RESTART DEBUG] maxScammers = ${this.maxScammers}`);
 
     // Give player starting weapon
     this.weaponSystem.unlockWeapon('fud_blast');
@@ -307,7 +299,11 @@ export class PlayingState extends State {
 
     // Update session stats
     this.sessionStats.timeSurvived = gameData.elapsedTime;
+    this.sessionStats.coinsCollected = gameData.coinsCollected;
+    this.sessionStats.scammersRepelled = gameData.scammersRepelled || 0;
     this.sessionStats.maxFudReached = Math.max(this.sessionStats.maxFudReached, gameData.fudLevel);
+    // Calculate $WETCAT earned: deposited coins + scammer repels + time bonus
+    this.sessionStats.wetcatEarned = (gameData.coinsDeposited * 10) + ((gameData.scammersRepelled || 0) * 5) + Math.floor(gameData.elapsedTime / 60) * 2;
 
     // Check win condition
     if (gameData.elapsedTime >= gameData.targetTime) {
@@ -347,7 +343,6 @@ export class PlayingState extends State {
 
     // Check if any kids disappeared during update
     if (this.scammers.length !== kidsBeforeUpdate) {
-      console.log(`[SCAMMER SPAWNING] WARNING: Scammers count changed during update! Before: ${kidsBeforeUpdate}, After: ${this.scammers.length}`);
     }
 
     // Update scammer spawning
@@ -422,13 +417,15 @@ export class PlayingState extends State {
       gameData.fudLevel += fudRate * deltaTime * fudMultiplier;
     }
 
-    // Passive chaos decay when low (helps recovery)
+    // Passive chaos decay (helps recovery)
     if (gameData.fudLevel > 0) {
       if (totalFUDCoins === 0) {
-        // Slow decay when no books are out
-        gameData.fudLevel -= 0.1 * deltaTime;
+        // Faster decay when no coins are loose
+        gameData.fudLevel -= 0.15 * deltaTime;
+      } else if (gameData.fudLevel > 50) {
+        // Gentle decay above 50% to prevent softlock - player still needs to act
+        gameData.fudLevel -= 0.03 * deltaTime;
       }
-      // Removed passive decay when under 50% - player must actively manage chaos
     }
 
     // Clamp chaos level
@@ -620,7 +617,7 @@ export class PlayingState extends State {
     const panelX = 10;
     const panelY = 10;
     const panelWidth = 250;
-    const panelHeight = 150; // Reduced since HP is removed
+    const panelHeight = 175;
 
     // Panel background
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
@@ -681,10 +678,16 @@ export class PlayingState extends State {
       ctx.fillStyle = '#fff';
       ctx.fillText(`Books: ${this.player.carriedCoins.length} / ${this.player.stats.carrySlots}`, panelX + 10, panelY + 105);
 
+      // $WETCAT earnings
+      ctx.font = '16px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#FFD93D';
+      ctx.fillText(`$WETCAT: ${this.sessionStats.wetcatEarned}`, panelX + 10, panelY + 130);
+
       // Speed indicator (if sprinting)
       if (this.player.isSprinting && this.player.stats.stamina > 0) {
         ctx.fillStyle = '#ffff00';
-        ctx.fillText('SPRINTING', panelX + 10, panelY + 130);
+        ctx.fillText('SPRINTING', panelX + 10, panelY + 155);
       }
     }
 
@@ -896,7 +899,6 @@ export class PlayingState extends State {
         duration: 3
       };
 
-      console.log(`[WAVE SYSTEM] Max kids increased to ${this.maxScammers} (+${increase})`);
     }
 
     // Update notification timer
@@ -916,19 +918,19 @@ export class PlayingState extends State {
     this.scammerSpawnTimer -= deltaTime;
 
     if (this.scammerSpawnTimer <= 0) {
-      // Determine aggression level based on time
-      let aggressionLevel = 1; // Easy by default
-      let spawnInterval = 15; // Always 15 seconds
+      // Determine aggression level and spawn interval based on time
+      let aggressionLevel = 1;
+      let spawnInterval = 15;
 
       if (minutes >= 15) {
-        // After 15 minutes: more aggressive scammers
         aggressionLevel = 3;
+        spawnInterval = 8; // Faster spawning late game
       } else if (minutes >= 10) {
-        // 10-15 minutes: aggressive scammers
         aggressionLevel = 3;
+        spawnInterval = 10;
       } else if (minutes >= 5) {
-        // 5-10 minutes: normal scammers
         aggressionLevel = 2;
+        spawnInterval = 12;
       }
 
       // Spawn a new scammer
@@ -940,7 +942,6 @@ export class PlayingState extends State {
       this.scammerSpawnTimer = spawnInterval;
       this.scammerSpawnInterval = spawnInterval;
 
-      console.log(`[SCAMMER SPAWNING] Spawned scammer #${this.scammers.length}/${this.maxScammers} (aggression: ${aggressionLevel}) - Next spawn in ${spawnInterval}s`);
     }
   }
 
@@ -1137,6 +1138,15 @@ export class PlayingState extends State {
 
       // Calculate next level XP requirement
       gameData.xpToNext = Math.floor(100 * Math.pow(1.45, gameData.playerLevel - 1));
+
+      // Unlock weapons at milestone levels
+      if (gameData.playerLevel === 3) {
+        this.weaponSystem.unlockWeapon('diamond_slap');
+      } else if (gameData.playerLevel === 5) {
+        this.weaponSystem.unlockWeapon('hodl_shield');
+      } else if (gameData.playerLevel === 7) {
+        this.weaponSystem.unlockWeapon('moon_beam');
+      }
 
       // Show upgrade selection
       this.game.stateManager.pushState('upgradeSelection');
@@ -1356,27 +1366,35 @@ export class PlayingState extends State {
   
   updateBoss(deltaTime) {
     if (!this.currentBoss) return;
-    
+
     this.currentBoss.update(deltaTime);
-    
+
     // Check collision with player attacks
     if (this.player) {
-      // Check weapon damage
+      const distance = this.player.getDistanceTo(this.currentBoss);
+
+      // Check each weapon - detect recently fired weapons
       this.weaponSystem.activeWeapons.forEach(weapon => {
-        if (weapon.currentCooldown <= 0.1 && weapon.id === 'diamond_slap') {
-          const distance = this.player.getDistanceTo(this.currentBoss);
-          if (distance < weapon.range) {
-            this.currentBoss.takeDamage(50);
-          }
+        // Weapon was just fired if cooldown is near max (within 0.2s of firing)
+        const justFired = weapon.currentCooldown > weapon.cooldown - 0.2 && weapon.currentCooldown > 0;
+        if (!justFired) return;
+
+        // Check if weapon hit the boss
+        if (weapon.id === 'diamond_slap' && distance < weapon.range + 30) {
+          this.currentBoss.takeDamage(50);
+          this.game.screenShake?.shake(8, 0.4);
+        } else if (weapon.id === 'fud_blast' && distance < 200) {
+          this.currentBoss.takeDamage(30);
+          this.game.screenShake?.shake(6, 0.3);
         }
       });
     }
-    
+
     // Remove dead boss
     if (this.currentBoss.isDead) {
       this.currentBoss = null;
-      // Resume normal spawning
       this.scammerSpawnTimer = 0;
+      this.game.screenShake?.shake(15, 1.0);
     }
   }
   

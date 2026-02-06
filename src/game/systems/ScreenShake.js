@@ -6,10 +6,13 @@ export class ScreenShake {
     this.time = 0;
   }
 
-  shake(intensity = 10, duration = 0.5) {
-    this.intensity = intensity;
-    this.duration = duration;
-    this.time = 0;
+  shake(intensity = 10, duration = 0.8) {
+    // Only override if new shake is stronger
+    if (intensity > this.intensity * (1 - this.time / Math.max(this.duration, 0.001))) {
+      this.intensity = intensity;
+      this.duration = duration;
+      this.time = 0;
+    }
   }
 
   update(deltaTime) {
@@ -17,7 +20,8 @@ export class ScreenShake {
       this.time += deltaTime;
 
       const progress = this.time / this.duration;
-      const currentIntensity = this.intensity * (1 - progress);
+      // Exponential decay for punchier shake
+      const currentIntensity = this.intensity * Math.pow(1 - progress, 2);
 
       // Apply random shake
       this.camera.offsetX = (Math.random() - 0.5) * currentIntensity * 2;

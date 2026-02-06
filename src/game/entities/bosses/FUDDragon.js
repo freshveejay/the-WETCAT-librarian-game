@@ -309,9 +309,11 @@ export class FUDDragon extends Boss {
       this.color = '#ff0000';
       this.damage *= 1.5;
     }
-    
-    // Full heal minions
-    this.summonMinions();
+
+    // Summon minions on phase change only if cooldown allows
+    if (this.minionCooldown <= 0) {
+      this.summonMinions();
+    }
   }
   
   onDefeat() {
