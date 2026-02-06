@@ -104,18 +104,18 @@ export class Player extends Entity {
     let canMoveX = true;
     let canMoveY = true;
 
-    if (state && state.shelves) {
-      for (const shelf of state.shelves) {
+    if (state && state.wallets) {
+      for (const wallet of state.wallets) {
         // Check X movement
-        if (this.checkCollision(newX, this.y, shelf)) {
+        if (this.checkCollision(newX, this.y, wallet)) {
           canMoveX = false;
         }
         // Check Y movement
-        if (this.checkCollision(this.x, newY, shelf)) {
+        if (this.checkCollision(this.x, newY, wallet)) {
           canMoveY = false;
         }
         // Check diagonal movement if both X and Y are blocked
-        if (!canMoveX && !canMoveY && this.checkCollision(newX, newY, shelf)) {
+        if (!canMoveX && !canMoveY && this.checkCollision(newX, newY, wallet)) {
           break; // Already blocked in both directions
         }
       }

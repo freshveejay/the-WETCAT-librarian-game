@@ -43,8 +43,8 @@ export class Game {
 
     // Debug info
     this.debug = {
-      showFPS: true, // Enable for alpha testing
-      showCollisionBoxes: true,
+      showFPS: false,
+      showCollisionBoxes: false,
       showGrid: false
     };
 

@@ -365,6 +365,11 @@ export class PlayingState extends State {
     // Update particles
     this.updateParticles(deltaTime);
 
+    // Update boss warning timer
+    if (this.showBossWarning && this.bossWarningTimer > 0) {
+      this.bossWarningTimer -= deltaTime;
+    }
+
     // Update boss
     if (this.currentBoss) {
       this.updateBoss(deltaTime);
@@ -571,22 +576,22 @@ export class PlayingState extends State {
       ctx.strokeText(notificationText, width / 2, notificationY);
       ctx.fillText(notificationText, width / 2, notificationY);
 
-      // Render particle system
-      if (this.particleSystem) {
-        this.particleSystem.render(ctx);
-      }
-
-      // Render weapon UI
-      if (this.weaponSystem) {
-        this.weaponSystem.render(ctx);
-      }
-
-      // Render Web3 UI
-      if (this.web3UI) {
-        this.web3UI.render(ctx);
-      }
-
       ctx.restore();
+    }
+
+    // Render particle system (always visible)
+    if (this.particleSystem) {
+      this.particleSystem.render(ctx);
+    }
+
+    // Render weapon UI (always visible)
+    if (this.weaponSystem) {
+      this.weaponSystem.render(ctx);
+    }
+
+    // Render Web3 UI (always visible)
+    if (this.web3UI) {
+      this.web3UI.render(ctx);
     }
 
     // Top Right - Timer and Kid Counter
