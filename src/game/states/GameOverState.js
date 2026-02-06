@@ -8,6 +8,7 @@ export class GameOverState extends State {
     this.stats = {};
     this.menuItems = [
       { text: 'Play Again', action: () => this.playAgain() },
+      { text: 'Share Score', action: () => this.shareScore() },
       { text: 'Main Menu', action: () => this.mainMenu() }
     ];
     this.selectedIndex = 0;
@@ -126,7 +127,7 @@ export class GameOverState extends State {
     if (mousePos) {
       const { width, height } = this.game;
       const boxWidth = 700;
-      const boxHeight = 600;
+      const boxHeight = 650;
       const boxX = (width - boxWidth) / 2;
       const boxY = (height - boxHeight) / 2;
 
@@ -197,7 +198,7 @@ export class GameOverState extends State {
 
     // Result box with rounded corners
     const boxWidth = 700;
-    const boxHeight = 600;
+    const boxHeight = 650;
     const boxX = (width - boxWidth) / 2;
     const boxY = (height - boxHeight) / 2;
     const borderRadius = 20;
@@ -326,6 +327,26 @@ export class GameOverState extends State {
 
   playAgain() {
     this.game.stateManager.changeState('playing');
+  }
+
+  shareScore() {
+    const mins = Math.floor(this.stats.timeElapsed / 60);
+    const secs = this.stats.timeElapsed % 60;
+    const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
+    const result = this.won ? 'WON' : 'survived';
+
+    const text = encodeURIComponent(
+      `I just ${result} in WETCAT Survivors!\n\n` +
+      `$WETCAT Earned: ${this.stats.wetcatEarned}\n` +
+      `Level: ${this.stats.level}\n` +
+      `Time: ${timeStr}\n` +
+      `Scammers Splashed: ${this.stats.scammersRepelled}\n\n` +
+      `Can you beat my score? Play now!\n` +
+      `https://wetcat-survivors.vercel.app\n\n` +
+      `#WETCAT #PlayToEarn #Web3Gaming`
+    );
+
+    window.open(`https://t.me/share/url?url=${encodeURIComponent('https://wetcat-survivors.vercel.app')}&text=${text}`, '_blank');
   }
 
   mainMenu() {
