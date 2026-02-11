@@ -4,7 +4,6 @@ import { InputManager } from './systems/InputManager.js';
 import { AssetLoader } from './systems/AssetLoader.js';
 import { Camera } from './systems/Camera.js';
 import { Renderer } from './systems/Renderer.js';
-import { GameDebugger } from './debug/GameDebugger.js';
 import { SoundManager } from './systems/SoundManager.js';
 import { ScreenShake } from './systems/ScreenShake.js';
 
@@ -47,9 +46,6 @@ export class Game {
       showCollisionBoxes: false,
       showGrid: false
     };
-
-    // Alpha mode debugger
-    this.debugger = new GameDebugger(this);
 
     // Game-specific data
     this.gameData = {
